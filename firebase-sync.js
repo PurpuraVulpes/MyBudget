@@ -1,10 +1,7 @@
 'use strict';
 
 // ============================================================
-// 🔥 FIREBASE CONFIGURATION
-// ============================================================
-// ⚠️ REMPLACEZ CES VALEURS par celles de VOTRE projet Firebase
-// (Firebase Console → Paramètres du projet → Vos applications)
+// 🔥 FIREBASE CONFIGURATION - REMPLACEZ PAR VOS VALEURS
 // ============================================================
 
 const firebaseConfig = {
@@ -18,17 +15,14 @@ const firebaseConfig = {
 
 // ============================================================
 
-// Init Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Enable offline persistence
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
     console.warn('Firestore persistence:', err.code);
 });
 
-// ===== AUTH STATE =====
 let currentUser = null;
 let isGuestMode = false;
 let unsubHoraires = null;
@@ -36,7 +30,6 @@ let unsubDepenses = null;
 let unsubPaiements = null;
 let unsubSettings = null;
 
-// Auth state listener
 auth.onAuthStateChanged(user => {
     currentUser = user;
     if (user && !isGuestMode) {
@@ -44,7 +37,6 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// ===== AUTH FUNCTIONS =====
 async function loginWithEmail(email, password) {
     const cred = await auth.signInWithEmailAndPassword(email, password);
     return cred.user;
@@ -60,18 +52,15 @@ async function resetPassword(email) {
 }
 
 async function logout() {
-    // Stop listeners
     if (unsubHoraires) { unsubHoraires(); unsubHoraires = null; }
-if (unsubDepenses) { unsubDepenses(); unsubDepenses = null; }
-if (unsubPaiements) { unsubPaiements(); unsubPaiements = null; }
-if (unsubSettings) { unsubSettings(); unsubSettings = null; }
-
+    if (unsubDepenses) { unsubDepenses(); unsubDepenses = null; }
+    if (unsubPaiements) { unsubPaiements(); unsubPaiements = null; }
+    if (unsubSettings) { unsubSettings(); unsubSettings = null; }
     await auth.signOut();
     currentUser = null;
     isGuestMode = false;
 }
 
-// ===== SYNC FUNCTIONS =====
 function onUserLoggedIn(user) {
     updateSyncUI('online', user.email);
     startRealtimeSync(user.uid);
@@ -89,33 +78,34 @@ function updateSyncUI(status, email) {
     const loggedActions = document.getElementById('loggedInActions');
     const accountActions = document.getElementById('accountActions');
 
+    if (!dot) return;
+
     if (status === 'online') {
         dot.className = 'sync-dot online';
         label.textContent = 'Cloud';
-        accEmail.textContent = email || 'Connecté';
-        accStatus.textContent = '☁️ Synchronisé';
-        accAvatar.textContent = '👤';
-        accInfo.classList.add('connected');
-        loginBtn.style.display = 'none';
-        accountActions.style.display = 'none';
-        loggedActions.classList.remove('hidden');
+        if (accEmail) accEmail.textContent = email || 'Connecté';
+        if (accStatus) accStatus.textContent = '☁️ Synchronisé';
+        if (accAvatar) accAvatar.textContent = '👤';
+        if (accInfo) accInfo.classList.add('connected');
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (accountActions) accountActions.style.display = 'none';
+        if (loggedActions) loggedActions.classList.remove('hidden');
     } else if (status === 'syncing') {
         dot.className = 'sync-dot syncing';
         label.textContent = 'Sync...';
     } else {
         dot.className = 'sync-dot offline';
         label.textContent = 'Local';
-        accEmail.textContent = 'Mode local';
-        accStatus.textContent = 'Non connecté';
-        accAvatar.textContent = '👤';
-        accInfo.classList.remove('connected');
-        loginBtn.style.display = 'block';
-        accountActions.style.display = 'block';
-        loggedActions.classList.add('hidden');
+        if (accEmail) accEmail.textContent = 'Mode local';
+        if (accStatus) accStatus.textContent = 'Non connecté';
+        if (accAvatar) accAvatar.textContent = '👤';
+        if (accInfo) accInfo.classList.remove('connected');
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (accountActions) accountActions.style.display = 'block';
+        if (loggedActions) loggedActions.classList.add('hidden');
     }
 }
 
-// Upload local data to cloud on first login
 async function uploadLocalDataIfNeeded(uid) {
     const uploaded = localStorage.getItem('mb_uploaded_' + uid);
     if (uploaded) return;
@@ -124,19 +114,15 @@ async function uploadLocalDataIfNeeded(uid) {
 
     try {
         const ref = db.collection('users').doc(uid);
-
-        // Check if cloud data exists
         const cloudSettings = await ref.collection('data').doc('settings').get();
 
         if (!cloudSettings.exists && App.horaires.length > 0) {
-            // No cloud data but local data exists → upload
             await ref.collection('data').doc('settings').set({
                 tauxHoraire: App.settings.tauxHoraire,
                 devise: App.settings.devise,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Upload horaires in batches
             const batch1 = db.batch();
             App.horaires.forEach(h => {
                 const docRef = ref.collection('horaires').doc(String(h.id));
@@ -144,22 +130,21 @@ async function uploadLocalDataIfNeeded(uid) {
             });
             await batch1.commit();
 
-            // Upload depenses in batches
             const batch2 = db.batch();
             App.depenses.forEach(d => {
                 const docRef = ref.collection('depenses').doc(String(d.id));
                 batch2.set(docRef, { ...d, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
             });
             await batch2.commit();
-            // Upload paiements in batches
-if (App.paiements && App.paiements.length > 0) {
-    const batch3 = db.batch();
-    App.paiements.forEach(p => {
-        const docRef = ref.collection('paiements').doc(String(p.id));
-        batch3.set(docRef, { ...p, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    await batch3.commit();
-}
+
+            if (App.paiements && App.paiements.length > 0) {
+                const batch3 = db.batch();
+                App.paiements.forEach(p => {
+                    const docRef = ref.collection('paiements').doc(String(p.id));
+                    batch3.set(docRef, { ...p, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                });
+                await batch3.commit();
+            }
 
             showToast('☁️ Données locales synchronisées !');
         }
@@ -172,11 +157,9 @@ if (App.paiements && App.paiements.length > 0) {
     updateSyncUI('online', currentUser?.email);
 }
 
-// ===== REALTIME SYNC =====
 function startRealtimeSync(uid) {
     const ref = db.collection('users').doc(uid);
 
-    // Listen to horaires
     unsubHoraires = ref.collection('horaires').onSnapshot(snapshot => {
         App.horaires = [];
         snapshot.forEach(doc => {
@@ -187,9 +170,8 @@ function startRealtimeSync(uid) {
         App.horaires.sort((a, b) => b.date.localeCompare(a.date));
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Horaires sync error:', err));
+    }, err => console.error('Horaires sync:', err));
 
-    // Listen to depenses
     unsubDepenses = ref.collection('depenses').onSnapshot(snapshot => {
         App.depenses = [];
         snapshot.forEach(doc => {
@@ -200,9 +182,8 @@ function startRealtimeSync(uid) {
         App.depenses.sort((a, b) => b.date.localeCompare(a.date));
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Depenses sync error:', err));
+    }, err => console.error('Depenses sync:', err));
 
-        // Listen to paiements
     unsubPaiements = ref.collection('paiements').onSnapshot(snapshot => {
         App.paiements = [];
         snapshot.forEach(doc => {
@@ -213,11 +194,8 @@ function startRealtimeSync(uid) {
         App.paiements.sort((a, b) => b.mois.localeCompare(a.mois));
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Paiements sync error:', err));
+    }, err => console.error('Paiements sync:', err));
 
-    // Listen to settings
-
-    // Listen to settings
     unsubSettings = ref.collection('data').doc('settings').onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
@@ -226,27 +204,22 @@ function startRealtimeSync(uid) {
             saveLocalData();
             if (typeof renderAll === 'function') renderAll();
         }
-    }, err => console.error('Settings sync error:', err));
+    }, err => console.error('Settings sync:', err));
 }
 
-// ===== CLOUD WRITE FUNCTIONS =====
 async function cloudAddHoraire(horaire) {
     if (!currentUser || isGuestMode) return;
     try {
         const ref = db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(horaire.id));
         await ref.set({ ...horaire, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    } catch (e) {
-        console.error('Cloud add horaire error:', e);
-    }
+    } catch (e) { console.error('Cloud add horaire:', e); }
 }
 
 async function cloudDeleteHoraire(id) {
     if (!currentUser || isGuestMode) return;
     try {
         await db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(id)).delete();
-    } catch (e) {
-        console.error('Cloud delete horaire error:', e);
-    }
+    } catch (e) { console.error('Cloud delete horaire:', e); }
 }
 
 async function cloudAddDepense(depense) {
@@ -254,18 +227,29 @@ async function cloudAddDepense(depense) {
     try {
         const ref = db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(depense.id));
         await ref.set({ ...depense, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    } catch (e) {
-        console.error('Cloud add depense error:', e);
-    }
+    } catch (e) { console.error('Cloud add depense:', e); }
 }
 
 async function cloudDeleteDepense(id) {
     if (!currentUser || isGuestMode) return;
     try {
         await db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(id)).delete();
-    } catch (e) {
-        console.error('Cloud delete depense error:', e);
-    }
+    } catch (e) { console.error('Cloud delete depense:', e); }
+}
+
+async function cloudAddPaiement(paiement) {
+    if (!currentUser || isGuestMode) return;
+    try {
+        const ref = db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(paiement.id));
+        await ref.set({ ...paiement, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } catch (e) { console.error('Cloud add paiement:', e); }
+}
+
+async function cloudDeletePaiement(id) {
+    if (!currentUser || isGuestMode) return;
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(id)).delete();
+    } catch (e) { console.error('Cloud delete paiement:', e); }
 }
 
 async function cloudSaveSettings() {
@@ -276,9 +260,7 @@ async function cloudSaveSettings() {
             devise: App.settings.devise,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-    } catch (e) {
-        console.error('Cloud save settings error:', e);
-    }
+    } catch (e) { console.error('Cloud save settings:', e); }
 }
 
 async function cloudDeleteAll() {
@@ -296,35 +278,17 @@ async function cloudDeleteAll() {
         const batch2 = db.batch();
         depenses.forEach(doc => batch2.delete(doc.ref));
         await batch2.commit();
+
         const paiements = await ref.collection('paiements').get();
-const batch3 = db.batch();
-paiements.forEach(doc => batch3.delete(doc.ref));
-await batch3.commit();
-    } catch (e) {
-        console.error('Cloud delete all error:', e);
-    }
+        const batch3 = db.batch();
+        paiements.forEach(doc => batch3.delete(doc.ref));
+        await batch3.commit();
+    } catch (e) { console.error('Cloud delete all:', e); }
 }
 
-async function cloudAddPaiement(paiement) {
-    if (!currentUser || isGuestMode) return;
-    try {
-        const ref = db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(paiement.id));
-        await ref.set({ ...paiement, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    } catch (e) { console.error('Cloud add paiement error:', e); }
-}
-
-async function cloudDeletePaiement(id) {
-    if (!currentUser || isGuestMode) return;
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(id)).delete();
-    } catch (e) { console.error('Cloud delete paiement error:', e); }
-}
-
-// Local save helper
 function saveLocalData() {
     localStorage.setItem('mb_horaires', JSON.stringify(App.horaires));
     localStorage.setItem('mb_depenses', JSON.stringify(App.depenses));
     localStorage.setItem('mb_paiements', JSON.stringify(App.paiements || []));
     localStorage.setItem('mb_settings', JSON.stringify(App.settings));
-}
 }
