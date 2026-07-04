@@ -174,12 +174,20 @@
                     <span class="card-value" id="totalHeures">0h 00</span>
                     <span class="card-label">Heures travaillées</span>
                 </div>
-                <div class="card card-jours">
-                    <div class="card-top"><span class="card-emoji">📅</span></div>
-                    <span class="card-value" id="totalJours">0</span>
-                    <span class="card-label">Jours travaillés</span>
-                </div>
-            </section>
+            <div class="card card-jours">
+    <div class="card-top"><span class="card-emoji">📅</span></div>
+    <span class="card-value" id="totalJours">0</span>
+    <span class="card-label">Jours travaillés</span>
+</div>
+<div class="card card-paie full-width" onclick="goTab('paiements')">
+    <div class="card-top">
+        <span class="card-emoji">💰</span>
+        <span class="solde-badge" id="paieBadge">À venir</span>
+    </div>
+    <span class="card-value" id="paieRecue">0,00 €</span>
+    <span class="card-label" id="paieLabel">Reçu ce mois</span>
+</div>
+</section>
 
             <!-- TAB: HORAIRES -->
             <section class="tab-section" id="tab-horaires">
@@ -242,6 +250,86 @@
                 </div>
             </section>
 
+<!-- TAB: PAIEMENTS -->
+<section class="tab-section" id="tab-paiements">
+    <div class="section-title">
+        <h2>💰 Mes Paiements</h2>
+        <button class="pill-btn" id="btnToggleFormP">+ Ajouter</button>
+    </div>
+
+    <!-- Info banner -->
+    <div class="info-banner">
+        <span class="info-icon">💡</span>
+        <div>
+            <strong>Salaire décalé</strong>
+            <small>Les heures faites ce mois-ci seront payées le mois suivant</small>
+        </div>
+    </div>
+
+    <!-- Prévision du mois -->
+    <div class="prevision-card" id="previsionCard">
+        <div class="prevision-header">
+            <span class="prevision-icon">🔮</span>
+            <div>
+                <strong>Prévision de paie</strong>
+                <small id="previsionSub">Basé sur vos heures</small>
+            </div>
+        </div>
+        <div class="prevision-row">
+            <div class="prevision-item">
+                <span>Ce mois-ci</span>
+                <strong id="previsionActuel">0,00 €</strong>
+                <small id="previsionActuelSub">Sera reçu le mois prochain</small>
+            </div>
+            <div class="prevision-sep"></div>
+            <div class="prevision-item">
+                <span>Mois précédent</span>
+                <strong id="previsionPrecedent">0,00 €</strong>
+                <small id="previsionPrecedentSub">À recevoir ce mois</small>
+            </div>
+        </div>
+        <button class="submit-btn purple" id="btnQuickPaie">✨ Enregistrer la paie prévue</button>
+    </div>
+
+    <!-- Form paiement -->
+    <div class="form-card collapsed" id="formCardP">
+        <form id="formPaiement">
+            <div class="form-field">
+                <label>📅 Mois de réception</label>
+                <input type="month" id="moisPaiement" required>
+            </div>
+            <div class="form-field">
+                <label>💶 Montant reçu (€)</label>
+                <input type="number" id="montantPaiement" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" required>
+            </div>
+            <div class="form-field">
+                <label>📝 Description</label>
+                <input type="text" id="descriptionPaiement" placeholder="Ex: Salaire janvier, Prime...">
+            </div>
+            <button type="submit" class="submit-btn green">✅ Enregistrer</button>
+        </form>
+    </div>
+
+    <!-- Filtre année -->
+    <div class="month-filter">
+        <button class="arrow-btn" id="prevYearP">‹</button>
+        <input type="number" id="filtreAnneeP" class="month-input" min="2020" max="2099">
+        <button class="arrow-btn" id="nextYearP">›</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="quick-stats">
+        <div class="qs-item"><span id="qsNbPaie">0</span><small>Paiements</small></div>
+        <div class="qs-item"><span id="qsTotalPaie">0 €</span><small>Total année</small></div>
+        <div class="qs-item"><span id="qsMoyPaie">0 €</span><small>Moyenne</small></div>
+    </div>
+
+    <!-- Liste -->
+    <div class="list-wrapper" id="listePaiements">
+        <p class="empty-state">💸 Aucun paiement enregistré.</p>
+    </div>
+</section>
+            
             <!-- TAB: DEPENSES -->
             <section class="tab-section" id="tab-depenses">
                 <div class="section-title">
@@ -421,13 +509,14 @@
 
         </main>
 
-        <!-- Bottom Nav -->
-        <nav class="bottom-nav">
-            <button class="nav-btn active" data-tab="horaires"><span class="nav-icon">⏰</span><span class="nav-label">Horaires</span></button>
-            <button class="nav-btn" data-tab="depenses"><span class="nav-icon">💳</span><span class="nav-label">Dépenses</span></button>
-            <button class="nav-btn" data-tab="resume"><span class="nav-icon">📈</span><span class="nav-label">Résumé</span></button>
-            <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
-        </nav>
+      <!-- Bottom Nav -->
+<nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="horaires"><span class="nav-icon">⏰</span><span class="nav-label">Horaires</span></button>
+    <button class="nav-btn" data-tab="paiements"><span class="nav-icon">💰</span><span class="nav-label">Paie</span></button>
+    <button class="nav-btn" data-tab="depenses"><span class="nav-icon">💳</span><span class="nav-label">Dépenses</span></button>
+    <button class="nav-btn" data-tab="resume"><span class="nav-icon">📈</span><span class="nav-label">Résumé</span></button>
+    <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
+</nav>
     </div>
 
     <!-- PIN Modal -->
