@@ -6,19 +6,57 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MonBudget">
-    <meta name="theme-color" content="#0a0a1a">
+    <meta name="theme-color" content="#0f0a1e">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json">
-
-    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="icon.png">
-
     <title>💰 MonBudget</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Splash / Install Banner pour iOS -->
+    <!-- ===== LOCK SCREEN ===== -->
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-content">
+            <div class="lock-icon" id="lockIcon">🔒</div>
+            <h2 class="lock-title" id="lockTitle">Entrez votre code</h2>
+            <p class="lock-subtitle" id="lockSubtitle">6 chiffres requis</p>
+
+            <!-- Dots -->
+            <div class="pin-dots" id="pinDots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+
+            <!-- Error message -->
+            <p class="pin-error" id="pinError"></p>
+
+            <!-- Keypad -->
+            <div class="keypad">
+                <button class="key" onclick="pressKey('1')">1</button>
+                <button class="key" onclick="pressKey('2')">2</button>
+                <button class="key" onclick="pressKey('3')">3</button>
+                <button class="key" onclick="pressKey('4')">4</button>
+                <button class="key" onclick="pressKey('5')">5</button>
+                <button class="key" onclick="pressKey('6')">6</button>
+                <button class="key" onclick="pressKey('7')">7</button>
+                <button class="key" onclick="pressKey('8')">8</button>
+                <button class="key" onclick="pressKey('9')">9</button>
+                <button class="key empty"></button>
+                <button class="key" onclick="pressKey('0')">0</button>
+                <button class="key delete" onclick="pressDelete()">⌫</button>
+            </div>
+
+            <!-- Forgot PIN -->
+            <button class="forgot-btn" id="forgotBtn" style="display:none;" onclick="forgotPin()">Code oublié ?</button>
+        </div>
+    </div>
+
+    <!-- ===== INSTALL BANNER ===== -->
     <div class="install-banner" id="installBanner">
         <div class="install-banner-content">
             <span class="install-icon">💰</span>
@@ -30,16 +68,17 @@
         </div>
     </div>
 
-    <!-- MAIN APP -->
-    <div class="app-wrapper">
+    <!-- ===== MAIN APP ===== -->
+    <div class="app-wrapper" id="appWrapper" style="display:none;">
 
         <!-- Top Bar -->
         <header class="top-bar">
             <div class="top-bar-inner">
                 <h1>💰 MonBudget</h1>
-                <button class="icon-btn" id="btnNotif" title="Mois actuel">
-                    <span id="currentMonthLabel"></span>
-                </button>
+                <div class="top-bar-right">
+                    <span id="currentMonthLabel" class="month-badge"></span>
+                    <button class="icon-btn" onclick="lockApp()" title="Verrouiller">🔒</button>
+                </div>
             </div>
         </header>
 
@@ -98,7 +137,6 @@
                     <button class="pill-btn" id="btnToggleFormH">+ Ajouter</button>
                 </div>
 
-                <!-- Form horaire -->
                 <div class="form-card collapsed" id="formCardH">
                     <form id="formHoraire">
                         <div class="form-field">
@@ -125,8 +163,6 @@
                                 <input type="text" id="noteHoraire" placeholder="Optionnel...">
                             </div>
                         </div>
-
-                        <!-- Live Preview -->
                         <div class="preview-box" id="previewBox">
                             <div class="preview-item">
                                 <span>⏱️ Durée</span>
@@ -138,19 +174,16 @@
                                 <strong id="previewGain">--</strong>
                             </div>
                         </div>
-
                         <button type="submit" class="submit-btn green">✅ Enregistrer l'horaire</button>
                     </form>
                 </div>
 
-                <!-- Filtre mois -->
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevH">‹</button>
                     <input type="month" id="filtreHoraireMois" class="month-input">
                     <button class="arrow-btn" id="nextH">›</button>
                 </div>
 
-                <!-- Résumé rapide -->
                 <div class="quick-stats" id="quickStatsH">
                     <div class="qs-item">
                         <span id="qsJoursH">0</span>
@@ -166,9 +199,8 @@
                     </div>
                 </div>
 
-                <!-- Liste -->
                 <div class="list-wrapper" id="listeHoraires">
-                    <p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter" pour commencer.</small></p>
+                    <p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter"</small></p>
                 </div>
             </section>
 
@@ -179,7 +211,6 @@
                     <button class="pill-btn red" id="btnToggleFormD">+ Ajouter</button>
                 </div>
 
-                <!-- Form dépense -->
                 <div class="form-card collapsed" id="formCardD">
                     <form id="formDepense">
                         <div class="form-row-2">
@@ -206,14 +237,12 @@
                     </form>
                 </div>
 
-                <!-- Filtre mois -->
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevD">‹</button>
                     <input type="month" id="filtreDepenseMois" class="month-input">
                     <button class="arrow-btn" id="nextD">›</button>
                 </div>
 
-                <!-- Résumé rapide -->
                 <div class="quick-stats" id="quickStatsD">
                     <div class="qs-item">
                         <span id="qsNbD">0</span>
@@ -229,12 +258,10 @@
                     </div>
                 </div>
 
-                <!-- Catégories barres -->
                 <div class="cat-summary" id="catSummary"></div>
 
-                <!-- Liste -->
                 <div class="list-wrapper" id="listeDepenses">
-                    <p class="empty-state">🎉 Aucune dépense ce mois !<br><small>Profitez-en !</small></p>
+                    <p class="empty-state">🎉 Aucune dépense ce mois !</p>
                 </div>
             </section>
 
@@ -244,14 +271,12 @@
                     <h2>📈 Résumé</h2>
                 </div>
 
-                <!-- Filtre mois -->
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevR">‹</button>
                     <input type="month" id="filtreResumeMois" class="month-input">
                     <button class="arrow-btn" id="nextR">›</button>
                 </div>
 
-                <!-- Bilan visuel -->
                 <div class="bilan-card">
                     <div class="bilan-row">
                         <div class="bilan-col green">
@@ -277,7 +302,6 @@
                     <p class="bilan-percent" id="bilanPercent">—</p>
                 </div>
 
-                <!-- Stats détaillées -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <span class="stat-icon">📅</span>
@@ -301,13 +325,11 @@
                     </div>
                 </div>
 
-                <!-- Graphique dépenses -->
                 <div class="chart-card">
                     <h3>📊 Dépenses journalières</h3>
                     <div class="bar-chart" id="barChart"></div>
                 </div>
 
-                <!-- Top dépenses -->
                 <div class="top-card">
                     <h3>🔝 Top dépenses</h3>
                     <div id="topDepenses"></div>
@@ -318,6 +340,23 @@
             <section class="tab-section" id="tab-settings">
                 <div class="section-title">
                     <h2>⚙️ Réglages</h2>
+                </div>
+
+                <!-- PIN Settings -->
+                <div class="settings-card">
+                    <h3>🔒 Code de sécurité</h3>
+                    <div class="pin-settings">
+                        <div class="pin-status">
+                            <span id="pinStatusIcon">🔓</span>
+                            <div>
+                                <strong id="pinStatusText">Aucun code défini</strong>
+                                <small id="pinStatusSub">Votre app n'est pas protégée</small>
+                            </div>
+                        </div>
+                        <button class="submit-btn purple" id="btnSetPin">🔐 Définir un code PIN</button>
+                        <button class="submit-btn outline" id="btnChangePin" style="display:none;">🔄 Changer le code PIN</button>
+                        <button class="submit-btn outline danger-text" id="btnRemovePin" style="display:none;">🗑️ Supprimer le code PIN</button>
+                    </div>
                 </div>
 
                 <div class="settings-card">
@@ -378,7 +417,7 @@
                     <div class="install-guide">
                         <div class="install-step">
                             <span class="step-num">1</span>
-                            <p>Appuyez sur le bouton <strong>Partager ⎙</strong> en bas de Safari</p>
+                            <p>Appuyez sur <strong>Partager ⎙</strong> dans Safari</p>
                         </div>
                         <div class="install-step">
                             <span class="step-num">2</span>
@@ -386,18 +425,18 @@
                         </div>
                         <div class="install-step">
                             <span class="step-num">3</span>
-                            <p>Appuyez sur <strong>"Ajouter"</strong> en haut à droite</p>
+                            <p>Appuyez sur <strong>"Ajouter"</strong></p>
                         </div>
-                        <p class="install-note">✅ L'app s'ouvrira comme une vraie application iOS !</p>
+                        <p class="install-note">✅ L'app fonctionnera comme une vraie app iOS !</p>
                     </div>
                 </div>
 
-                <div class="app-version">MonBudget v2.0 • Données stockées localement</div>
+                <div class="app-version">MonBudget v2.1 • Données stockées localement 🔒</div>
             </section>
 
         </main>
 
-        <!-- Bottom Navigation Bar (iOS style) -->
+        <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn active" data-tab="horaires">
                 <span class="nav-icon">⏰</span>
@@ -418,7 +457,38 @@
         </nav>
     </div>
 
-    <!-- Modal de confirmation -->
+    <!-- ===== PIN SETUP MODAL ===== -->
+    <div class="modal-overlay" id="pinModal">
+        <div class="modal">
+            <h3 id="pinModalTitle">🔐 Définir un code PIN</h3>
+            <p id="pinModalMsg">Entrez un code à 6 chiffres</p>
+            <div class="pin-dots modal-dots" id="modalPinDots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <p class="pin-error" id="modalPinError"></p>
+            <div class="keypad modal-keypad">
+                <button class="key" onclick="modalPressKey('1')">1</button>
+                <button class="key" onclick="modalPressKey('2')">2</button>
+                <button class="key" onclick="modalPressKey('3')">3</button>
+                <button class="key" onclick="modalPressKey('4')">4</button>
+                <button class="key" onclick="modalPressKey('5')">5</button>
+                <button class="key" onclick="modalPressKey('6')">6</button>
+                <button class="key" onclick="modalPressKey('7')">7</button>
+                <button class="key" onclick="modalPressKey('8')">8</button>
+                <button class="key" onclick="modalPressKey('9')">9</button>
+                <button class="key cancel-key" onclick="closePinModal()">✕</button>
+                <button class="key" onclick="modalPressKey('0')">0</button>
+                <button class="key delete" onclick="modalPressDelete()">⌫</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <h3 id="modalTitle">Confirmation</h3>
