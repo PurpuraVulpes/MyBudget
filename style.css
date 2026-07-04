@@ -698,3 +698,92 @@ body {
 
 ::-webkit-scrollbar { display: none; }
 ::selection { background: var(--purple-glow); }
+
+/* ===== PAIEMENTS ===== */
+.card-paie::before { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+.card-paie .card-value { color: #f1c40f; }
+
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(155,89,182,0.08);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+}
+
+.info-banner .info-icon { font-size: 1.5rem; }
+.info-banner strong { display: block; font-size: 0.9rem; }
+.info-banner small { display: block; font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+
+.prevision-card {
+    background: linear-gradient(135deg, var(--card), var(--card2));
+    border-radius: var(--radius);
+    border: 1px solid var(--primary);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 25px var(--purple-glow);
+}
+
+.prevision-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.prevision-icon { font-size: 2rem; }
+.prevision-header strong { display: block; font-size: 1rem; }
+.prevision-header small { font-size: 0.78rem; color: var(--text2); }
+
+.prevision-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+}
+
+.prevision-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.prevision-item span {
+    font-size: 0.72rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.prevision-item strong {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--primary-light);
+    letter-spacing: -0.3px;
+}
+
+.prevision-item small {
+    font-size: 0.7rem;
+    color: var(--text3);
+}
+
+.prevision-sep {
+    width: 1px;
+    height: 50px;
+    background: var(--border);
+}
+
+.solde-badge.warning {
+    background: rgba(241,196,15,0.2);
+    color: #f1c40f;
+}
