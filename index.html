@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MonBudget">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <title>💰 MonBudget</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Splash / Install Banner pour iOS -->
+    <div class="install-banner" id="installBanner">
+        <div class="install-banner-content">
+            <span class="install-icon">💰</span>
+            <div class="install-text">
+                <strong>Installer MonBudget</strong>
+                <small>Appuyez sur <span>⎙</span> puis "Sur l'écran d'accueil"</small>
+            </div>
+            <button class="install-close" id="installClose">✕</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="app-wrapper">
+
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-inner">
+                <h1>💰 MonBudget</h1>
+                <button class="icon-btn" id="btnNotif" title="Mois actuel">
+                    <span id="currentMonthLabel"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable content -->
+        <main class="main-scroll" id="mainScroll">
+
+            <!-- Dashboard Cards -->
+            <section class="dashboard">
+                <div class="card card-revenus" onclick="goTab('horaires')">
+                    <div class="card-top">
+                        <span class="card-emoji">💵</span>
+                        <span class="card-trend" id="trendRevenus"></span>
+                    </div>
+                    <span class="card-value" id="totalRevenus">0,00 €</span>
+                    <span class="card-label">Revenus ce mois</span>
+                </div>
+                <div class="card card-depenses" onclick="goTab('depenses')">
+                    <div class="card-top">
+                        <span class="card-emoji">🛒</span>
+                        <span class="card-trend" id="trendDepenses"></span>
+                    </div>
+                    <span class="card-value" id="totalDepenses">0,00 €</span>
+                    <span class="card-label">Dépenses ce mois</span>
+                </div>
+                <div class="card card-solde full-width">
+                    <div class="card-top">
+                        <span class="card-emoji">📊</span>
+                        <span class="solde-badge" id="soldeBadge">Équilibre</span>
+                    </div>
+                    <span class="card-value" id="solde">0,00 €</span>
+                    <span class="card-label">Il me reste</span>
+                    <div class="solde-bar-track">
+                        <div class="solde-bar-fill" id="soldeBar"></div>
+                    </div>
+                </div>
+                <div class="card card-heures">
+                    <div class="card-top">
+                        <span class="card-emoji">⏱️</span>
+                    </div>
+                    <span class="card-value" id="totalHeures">0h 00</span>
+                    <span class="card-label">Heures travaillées</span>
+                </div>
+                <div class="card card-jours">
+                    <div class="card-top">
+                        <span class="card-emoji">📅</span>
+                    </div>
+                    <span class="card-value" id="totalJours">0</span>
+                    <span class="card-label">Jours travaillés</span>
+                </div>
+            </section>
+
+            <!-- ===== TAB: HORAIRES ===== -->
+            <section class="tab-section" id="tab-horaires">
+                <div class="section-title">
+                    <h2>⏰ Mes Horaires</h2>
+                    <button class="pill-btn" id="btnToggleFormH">+ Ajouter</button>
+                </div>
+
+                <!-- Form horaire -->
+                <div class="form-card collapsed" id="formCardH">
+                    <form id="formHoraire">
+                        <div class="form-field">
+                            <label>📅 Date</label>
+                            <input type="date" id="dateHoraire" required>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label>🕐 Début</label>
+                                <input type="time" id="heureDebut" required>
+                            </div>
+                            <div class="form-field">
+                                <label>🕔 Fin</label>
+                                <input type="time" id="heureFin" required>
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label>☕ Pause (min)</label>
+                                <input type="number" id="pauseMinutes" value="0" min="0" max="480">
+                            </div>
+                            <div class="form-field">
+                                <label>📝 Note</label>
+                                <input type="text" id="noteHoraire" placeholder="Optionnel...">
+                            </div>
+                        </div>
+
+                        <!-- Live Preview -->
+                        <div class="preview-box" id="previewBox">
+                            <div class="preview-item">
+                                <span>⏱️ Durée</span>
+                                <strong id="previewDuree">--</strong>
+                            </div>
+                            <div class="preview-sep"></div>
+                            <div class="preview-item">
+                                <span>💵 Gain</span>
+                                <strong id="previewGain">--</strong>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn green">✅ Enregistrer l'horaire</button>
+                    </form>
+                </div>
+
+                <!-- Filtre mois -->
+                <div class="month-filter">
+                    <button class="arrow-btn" id="prevH">‹</button>
+                    <input type="month" id="filtreHoraireMois" class="month-input">
+                    <button class="arrow-btn" id="nextH">›</button>
+                </div>
+
+                <!-- Résumé rapide -->
+                <div class="quick-stats" id="quickStatsH">
+                    <div class="qs-item">
+                        <span id="qsJoursH">0</span>
+                        <small>Jours</small>
+                    </div>
+                    <div class="qs-item">
+                        <span id="qsHeuresH">0h</span>
+                        <small>Heures</small>
+                    </div>
+                    <div class="qs-item">
+                        <span id="qsGainH">0 €</span>
+                        <small>Revenus</small>
+                    </div>
+                </div>
+
+                <!-- Liste -->
+                <div class="list-wrapper" id="listeHoraires">
+                    <p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter" pour commencer.</small></p>
+                </div>
+            </section>
+
+            <!-- ===== TAB: DEPENSES ===== -->
+            <section class="tab-section" id="tab-depenses">
+                <div class="section-title">
+                    <h2>💳 Mes Dépenses</h2>
+                    <button class="pill-btn red" id="btnToggleFormD">+ Ajouter</button>
+                </div>
+
+                <!-- Form dépense -->
+                <div class="form-card collapsed" id="formCardD">
+                    <form id="formDepense">
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label>📅 Date</label>
+                                <input type="date" id="dateDepense" required>
+                            </div>
+                            <div class="form-field">
+                                <label>💶 Montant (€)</label>
+                                <input type="number" id="montantDepense" step="0.01" min="0.01"
+                                       placeholder="0,00" inputmode="decimal" required>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>🏷️ Catégorie</label>
+                            <div class="cat-grid" id="catGrid"></div>
+                            <input type="hidden" id="categorieDepense" required>
+                        </div>
+                        <div class="form-field">
+                            <label>📝 Description</label>
+                            <input type="text" id="descriptionDepense" placeholder="Ex: Courses Carrefour">
+                        </div>
+                        <button type="submit" class="submit-btn red">✅ Enregistrer la dépense</button>
+                    </form>
+                </div>
+
+                <!-- Filtre mois -->
+                <div class="month-filter">
+                    <button class="arrow-btn" id="prevD">‹</button>
+                    <input type="month" id="filtreDepenseMois" class="month-input">
+                    <button class="arrow-btn" id="nextD">›</button>
+                </div>
+
+                <!-- Résumé rapide -->
+                <div class="quick-stats" id="quickStatsD">
+                    <div class="qs-item">
+                        <span id="qsNbD">0</span>
+                        <small>Dépenses</small>
+                    </div>
+                    <div class="qs-item">
+                        <span id="qsMoyD">0 €</span>
+                        <small>Moyenne</small>
+                    </div>
+                    <div class="qs-item">
+                        <span id="qsMaxD">0 €</span>
+                        <small>Max</small>
+                    </div>
+                </div>
+
+                <!-- Catégories barres -->
+                <div class="cat-summary" id="catSummary"></div>
+
+                <!-- Liste -->
+                <div class="list-wrapper" id="listeDepenses">
+                    <p class="empty-state">🎉 Aucune dépense ce mois !<br><small>Profitez-en !</small></p>
+                </div>
+            </section>
+
+            <!-- ===== TAB: RESUME ===== -->
+            <section class="tab-section" id="tab-resume">
+                <div class="section-title">
+                    <h2>📈 Résumé</h2>
+                </div>
+
+                <!-- Filtre mois -->
+                <div class="month-filter">
+                    <button class="arrow-btn" id="prevR">‹</button>
+                    <input type="month" id="filtreResumeMois" class="month-input">
+                    <button class="arrow-btn" id="nextR">›</button>
+                </div>
+
+                <!-- Bilan visuel -->
+                <div class="bilan-card">
+                    <div class="bilan-row">
+                        <div class="bilan-col green">
+                            <span class="bilan-icon">💵</span>
+                            <span class="bilan-amount" id="bilanRevenus">0,00 €</span>
+                            <span class="bilan-lbl">Revenus</span>
+                        </div>
+                        <div class="bilan-vs">VS</div>
+                        <div class="bilan-col red">
+                            <span class="bilan-icon">🛒</span>
+                            <span class="bilan-amount" id="bilanDepenses">0,00 €</span>
+                            <span class="bilan-lbl">Dépenses</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-green" id="progressGreen"></div>
+                        <div class="progress-bar-red" id="progressRed"></div>
+                    </div>
+                    <div class="bilan-solde">
+                        <span>Il vous reste</span>
+                        <strong id="bilanSolde">0,00 €</strong>
+                    </div>
+                    <p class="bilan-percent" id="bilanPercent">—</p>
+                </div>
+
+                <!-- Stats détaillées -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-icon">📅</span>
+                        <span class="stat-val" id="statJours">0</span>
+                        <span class="stat-lbl">Jours travaillés</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">⏱️</span>
+                        <span class="stat-val" id="statHeures">0h</span>
+                        <span class="stat-lbl">Heures totales</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">💳</span>
+                        <span class="stat-val" id="statNbDep">0</span>
+                        <span class="stat-lbl">Nb dépenses</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">📉</span>
+                        <span class="stat-val" id="statMoyDep">0 €</span>
+                        <span class="stat-lbl">Dépense moy.</span>
+                    </div>
+                </div>
+
+                <!-- Graphique dépenses -->
+                <div class="chart-card">
+                    <h3>📊 Dépenses journalières</h3>
+                    <div class="bar-chart" id="barChart"></div>
+                </div>
+
+                <!-- Top dépenses -->
+                <div class="top-card">
+                    <h3>🔝 Top dépenses</h3>
+                    <div id="topDepenses"></div>
+                </div>
+            </section>
+
+            <!-- ===== TAB: SETTINGS ===== -->
+            <section class="tab-section" id="tab-settings">
+                <div class="section-title">
+                    <h2>⚙️ Réglages</h2>
+                </div>
+
+                <div class="settings-card">
+                    <h3>💼 Mon salaire</h3>
+                    <div class="form-field">
+                        <label>Taux horaire (€/h)</label>
+                        <div class="input-stepper">
+                            <button type="button" class="stepper-btn" id="tauxMinus">−</button>
+                            <input type="number" id="tauxHoraire" step="0.5" min="0" value="12.00" inputmode="decimal">
+                            <button type="button" class="stepper-btn" id="tauxPlus">+</button>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Devise</label>
+                        <div class="devise-grid">
+                            <button type="button" class="devise-btn active" data-devise="€">€ Euro</button>
+                            <button type="button" class="devise-btn" data-devise="$">$ Dollar</button>
+                            <button type="button" class="devise-btn" data-devise="£">£ Livre</button>
+                            <button type="button" class="devise-btn" data-devise="CHF">CHF</button>
+                        </div>
+                    </div>
+                    <button class="submit-btn green" id="btnSaveSettings">💾 Sauvegarder</button>
+                </div>
+
+                <div class="settings-card">
+                    <h3>📦 Données</h3>
+                    <div class="settings-list">
+                        <button class="settings-row" id="btnExport">
+                            <span>📤</span>
+                            <div>
+                                <strong>Exporter mes données</strong>
+                                <small>Fichier JSON de sauvegarde</small>
+                            </div>
+                            <span>›</span>
+                        </button>
+                        <label class="settings-row" for="btnImport">
+                            <span>📥</span>
+                            <div>
+                                <strong>Importer des données</strong>
+                                <small>Restaurer une sauvegarde</small>
+                            </div>
+                            <span>›</span>
+                            <input type="file" id="btnImport" accept=".json" hidden>
+                        </label>
+                        <button class="settings-row danger" id="btnReset">
+                            <span>🗑️</span>
+                            <div>
+                                <strong>Effacer toutes les données</strong>
+                                <small>Action irréversible</small>
+                            </div>
+                            <span>›</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3>📱 Installer l'app</h3>
+                    <div class="install-guide">
+                        <div class="install-step">
+                            <span class="step-num">1</span>
+                            <p>Appuyez sur le bouton <strong>Partager ⎙</strong> en bas de Safari</p>
+                        </div>
+                        <div class="install-step">
+                            <span class="step-num">2</span>
+                            <p>Sélectionnez <strong>"Sur l'écran d'accueil"</strong></p>
+                        </div>
+                        <div class="install-step">
+                            <span class="step-num">3</span>
+                            <p>Appuyez sur <strong>"Ajouter"</strong> en haut à droite</p>
+                        </div>
+                        <p class="install-note">✅ L'app s'ouvrira comme une vraie application iOS !</p>
+                    </div>
+                </div>
+
+                <div class="app-version">MonBudget v2.0 • Données stockées localement</div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation Bar (iOS style) -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-tab="horaires">
+                <span class="nav-icon">⏰</span>
+                <span class="nav-label">Horaires</span>
+            </button>
+            <button class="nav-btn" data-tab="depenses">
+                <span class="nav-icon">💳</span>
+                <span class="nav-label">Dépenses</span>
+            </button>
+            <button class="nav-btn" data-tab="resume">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Résumé</span>
+            </button>
+            <button class="nav-btn" data-tab="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Réglages</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal de confirmation -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle">Confirmation</h3>
+            <p id="modalMessage"></p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="modalCancel">Annuler</button>
+                <button class="modal-btn confirm" id="modalConfirm">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
