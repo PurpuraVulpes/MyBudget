@@ -8,6 +8,17 @@ const App = {
     activeTab: 'horaires'
 };
 
+// ===== PIN STATE =====
+let pinInput = '';
+let pinMode = 'unlock'; // 'unlock', 'setup', 'confirm', 'change-verify', 'change-new', 'change-confirm', 'remove'
+let pinSetupTemp = '';
+let pinAttempts = 0;
+
+// Modal PIN state
+let modalPinInput = '';
+let modalPinMode = ''; // 'setup', 'confirm', 'change-verify', 'change-new', 'change-confirm', 'remove'
+let modalPinTemp = '';
+
 const CATEGORIES = [
     { emoji: '🍔', label: 'Alimentation' },
     { emoji: '🏠', label: 'Loyer' },
@@ -24,9 +35,9 @@ const CATEGORIES = [
 ];
 
 const CAT_COLORS = [
-    '#e17055','#00b894','#6c5ce7','#fdcb6e','#e84393',
-    '#00cec9','#fd79a8','#a29bfe','#74b9ff','#ff9f43',
-    '#55efc4','#b2bec3'
+    '#9b59b6','#00d2a0','#e17055','#fdcb6e','#e84393',
+    '#a29bfe','#fd79a8','#74b9ff','#ff9f43','#55efc4',
+    '#c39bd3','#b2bec3'
 ];
 
 // ===== INIT =====
@@ -37,12 +48,351 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initForms();
     initSettings();
+    initPinSettings();
     initMonthFilters();
     setDefaultDates();
     renderAll();
     showInstallBanner();
     updateMonthLabel();
+    checkPin();
 });
+
+// ===== PIN SYSTEM =====
+function getStoredPin() {
+    return localStorage.getItem('mb_pin');
+}
+
+function setStoredPin(pin) {
+    localStorage.setItem('mb_pin', pin);
+}
+
+function removeStoredPin() {
+    localStorage.removeItem('mb_pin');
+}
+
+function checkPin() {
+    const pin = getStoredPin();
+    if (pin) {
+        // PIN exists -> show lock screen
+        showLockScreen();
+    } else {
+        // No PIN -> go straight to app
+        unlockApp();
+    }
+}
+
+function showLockScreen() {
+    document.getElementById('lockScreen').classList.remove('hidden');
+    document.getElementById('appWrapper').style.display = 'none';
+    document.getElementById('lockIcon').textContent = '🔒';
+    document.getElementById('lockTitle').textContent = 'Entrez votre code';
+    document.getElementById('lockSubtitle').textContent = '6 chiffres requis';
+    document.getElementById('forgotBtn').style.display = 'block';
+    pinInput = '';
+    pinMode = 'unlock';
+    pinAttempts = 0;
+    updateDots('pinDots', pinInput);
+    document.getElementById('pinError').textContent = '';
+}
+
+function unlockApp() {
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('appWrapper').style.display = 'flex';
+}
+
+function lockApp() {
+    const pin = getStoredPin();
+    if (pin) {
+        showLockScreen();
+    } else {
+        showToast('🔓 Aucun code défini');
+    }
+}
+
+// Lock screen keypad
+function pressKey(num) {
+    if (pinInput.length >= 6) return;
+    pinInput += num;
+    updateDots('pinDots', pinInput);
+
+    // Haptic-like visual feedback
+    if (pinInput.length === 6) {
+        setTimeout(() => handlePinComplete(), 200);
+    }
+}
+
+function pressDelete() {
+    pinInput = pinInput.slice(0, -1);
+    updateDots('pinDots', pinInput);
+    document.getElementById('pinError').textContent = '';
+}
+
+function handlePinComplete() {
+    const stored = getStoredPin();
+
+    if (pinMode === 'unlock') {
+        if (pinInput === stored) {
+            // Success!
+            setDotsState('pinDots', 'success');
+            setTimeout(() => {
+                unlockApp();
+            }, 400);
+        } else {
+            // Wrong PIN
+            pinAttempts++;
+            setDotsState('pinDots', 'error');
+            document.getElementById('pinError').textContent =
+                pinAttempts >= 3
+                    ? `Code incorrect (${pinAttempts} essais)`
+                    : 'Code incorrect';
+
+            setTimeout(() => {
+                pinInput = '';
+                updateDots('pinDots', pinInput);
+            }, 500);
+        }
+    }
+}
+
+function forgotPin() {
+    const secret = prompt(
+        '⚠️ Réinitialisation du code PIN\n\n' +
+        'Tapez RESET pour supprimer le code.\n' +
+        '(Vos données ne seront pas effacées)'
+    );
+
+    if (secret && secret.toUpperCase() === 'RESET') {
+        removeStoredPin();
+        unlockApp();
+        showToast('🔓 Code PIN supprimé');
+    }
+}
+
+function updateDots(containerId, value) {
+    const dots = document.querySelectorAll(`#${containerId} .dot`);
+    dots.forEach((d, i) => {
+        d.classList.remove('filled', 'error', 'success');
+        if (i < value.length) d.classList.add('filled');
+    });
+}
+
+function setDotsState(containerId, state) {
+    const dots = document.querySelectorAll(`#${containerId} .dot`);
+    dots.forEach(d => {
+        d.classList.remove('filled', 'error', 'success');
+        d.classList.add(state);
+    });
+}
+
+// ===== PIN SETUP (in settings modal) =====
+function initPinSettings() {
+    updatePinStatus();
+
+    document.getElementById('btnSetPin').addEventListener('click', () => {
+        openPinModal('setup');
+    });
+
+    document.getElementById('btnChangePin').addEventListener('click', () => {
+        openPinModal('change-verify');
+    });
+
+    document.getElementById('btnRemovePin').addEventListener('click', () => {
+        openPinModal('remove');
+    });
+}
+
+function updatePinStatus() {
+    const pin = getStoredPin();
+    const icon = document.getElementById('pinStatusIcon');
+    const text = document.getElementById('pinStatusText');
+    const sub = document.getElementById('pinStatusSub');
+    const status = document.querySelector('.pin-status');
+    const setBtn = document.getElementById('btnSetPin');
+    const changeBtn = document.getElementById('btnChangePin');
+    const removeBtn = document.getElementById('btnRemovePin');
+
+    if (pin) {
+        icon.textContent = '🔒';
+        text.textContent = 'Code PIN activé';
+        sub.textContent = 'Votre app est protégée';
+        status.classList.add('active-pin');
+        setBtn.style.display = 'none';
+        changeBtn.style.display = 'block';
+        removeBtn.style.display = 'block';
+    } else {
+        icon.textContent = '🔓';
+        text.textContent = 'Aucun code défini';
+        sub.textContent = 'Votre app n\'est pas protégée';
+        status.classList.remove('active-pin');
+        setBtn.style.display = 'block';
+        changeBtn.style.display = 'none';
+        removeBtn.style.display = 'none';
+    }
+}
+
+function openPinModal(mode) {
+    modalPinMode = mode;
+    modalPinInput = '';
+    modalPinTemp = '';
+    document.getElementById('modalPinError').textContent = '';
+    updateDots('modalPinDots', '');
+
+    const title = document.getElementById('pinModalTitle');
+    const msg = document.getElementById('pinModalMsg');
+
+    switch(mode) {
+        case 'setup':
+            title.textContent = '🔐 Nouveau code PIN';
+            msg.textContent = 'Entrez un code à 6 chiffres';
+            break;
+        case 'change-verify':
+            title.textContent = '🔄 Changer le code';
+            msg.textContent = 'Entrez votre code actuel';
+            break;
+        case 'remove':
+            title.textContent = '🗑️ Supprimer le code';
+            msg.textContent = 'Entrez votre code actuel pour confirmer';
+            break;
+    }
+
+    document.getElementById('pinModal').classList.add('show');
+}
+
+function closePinModal() {
+    document.getElementById('pinModal').classList.remove('show');
+    modalPinInput = '';
+    modalPinTemp = '';
+}
+
+function modalPressKey(num) {
+    if (modalPinInput.length >= 6) return;
+    modalPinInput += num;
+    updateDots('modalPinDots', modalPinInput);
+
+    if (modalPinInput.length === 6) {
+        setTimeout(() => handleModalPinComplete(), 200);
+    }
+}
+
+function modalPressDelete() {
+    modalPinInput = modalPinInput.slice(0, -1);
+    updateDots('modalPinDots', modalPinInput);
+    document.getElementById('modalPinError').textContent = '';
+}
+
+function handleModalPinComplete() {
+    const title = document.getElementById('pinModalTitle');
+    const msg = document.getElementById('pinModalMsg');
+    const err = document.getElementById('modalPinError');
+
+    switch(modalPinMode) {
+        case 'setup':
+            // First entry — save temp and ask to confirm
+            modalPinTemp = modalPinInput;
+            modalPinInput = '';
+            modalPinMode = 'confirm';
+            title.textContent = '🔐 Confirmez le code';
+            msg.textContent = 'Entrez le même code une 2ème fois';
+            updateDots('modalPinDots', '');
+            break;
+
+        case 'confirm':
+            if (modalPinInput === modalPinTemp) {
+                setDotsState('modalPinDots', 'success');
+                setStoredPin(modalPinTemp);
+                setTimeout(() => {
+                    closePinModal();
+                    updatePinStatus();
+                    showToast('🔒 Code PIN activé !');
+                }, 500);
+            } else {
+                setDotsState('modalPinDots', 'error');
+                err.textContent = 'Les codes ne correspondent pas';
+                setTimeout(() => {
+                    modalPinInput = '';
+                    modalPinMode = 'setup';
+                    modalPinTemp = '';
+                    title.textContent = '🔐 Nouveau code PIN';
+                    msg.textContent = 'Entrez un code à 6 chiffres';
+                    updateDots('modalPinDots', '');
+                    err.textContent = '';
+                }, 800);
+            }
+            break;
+
+        case 'change-verify':
+            if (modalPinInput === getStoredPin()) {
+                setDotsState('modalPinDots', 'success');
+                setTimeout(() => {
+                    modalPinInput = '';
+                    modalPinMode = 'change-new';
+                    title.textContent = '🔐 Nouveau code';
+                    msg.textContent = 'Entrez votre nouveau code à 6 chiffres';
+                    updateDots('modalPinDots', '');
+                }, 400);
+            } else {
+                setDotsState('modalPinDots', 'error');
+                err.textContent = 'Code incorrect';
+                setTimeout(() => {
+                    modalPinInput = '';
+                    updateDots('modalPinDots', '');
+                }, 500);
+            }
+            break;
+
+        case 'change-new':
+            modalPinTemp = modalPinInput;
+            modalPinInput = '';
+            modalPinMode = 'change-confirm';
+            title.textContent = '🔐 Confirmez';
+            msg.textContent = 'Entrez le nouveau code une 2ème fois';
+            updateDots('modalPinDots', '');
+            break;
+
+        case 'change-confirm':
+            if (modalPinInput === modalPinTemp) {
+                setDotsState('modalPinDots', 'success');
+                setStoredPin(modalPinTemp);
+                setTimeout(() => {
+                    closePinModal();
+                    updatePinStatus();
+                    showToast('🔒 Code PIN modifié !');
+                }, 500);
+            } else {
+                setDotsState('modalPinDots', 'error');
+                err.textContent = 'Les codes ne correspondent pas';
+                setTimeout(() => {
+                    modalPinInput = '';
+                    modalPinMode = 'change-new';
+                    modalPinTemp = '';
+                    title.textContent = '🔐 Nouveau code';
+                    msg.textContent = 'Entrez votre nouveau code à 6 chiffres';
+                    updateDots('modalPinDots', '');
+                    err.textContent = '';
+                }, 800);
+            }
+            break;
+
+        case 'remove':
+            if (modalPinInput === getStoredPin()) {
+                setDotsState('modalPinDots', 'success');
+                removeStoredPin();
+                setTimeout(() => {
+                    closePinModal();
+                    updatePinStatus();
+                    showToast('🔓 Code PIN supprimé');
+                }, 500);
+            } else {
+                setDotsState('modalPinDots', 'error');
+                err.textContent = 'Code incorrect';
+                setTimeout(() => {
+                    modalPinInput = '';
+                    updateDots('modalPinDots', '');
+                }, 500);
+            }
+            break;
+    }
+}
 
 // ===== STORAGE =====
 function loadData() {
@@ -65,64 +415,38 @@ function saveData() {
 // ===== NAVIGATION =====
 function initNavigation() {
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            goTab(tab);
-        });
+        btn.addEventListener('click', () => goTab(btn.dataset.tab));
     });
 }
 
 function goTab(tab) {
     App.activeTab = tab;
-
-    // Nav buttons
-    document.querySelectorAll('.nav-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.tab === tab);
-    });
-
-    // Sections
-    document.querySelectorAll('.tab-section').forEach(s => {
-        s.classList.toggle('active', s.id === 'tab-' + tab);
-    });
-
-    // Dashboard always visible
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.id === 'tab-' + tab));
     document.querySelector('.dashboard').style.display = 'grid';
-
-    // Scroll to top
     document.getElementById('mainScroll').scrollTo({ top: 0, behavior: 'smooth' });
-
     if (tab === 'resume') renderResume();
     if (tab === 'depenses') renderCatSummary();
 }
 
 // ===== TABS (form toggles) =====
 function initTabs() {
-    document.getElementById('btnToggleFormH').addEventListener('click', () => {
-        toggleForm('formCardH', 'btnToggleFormH');
-    });
-    document.getElementById('btnToggleFormD').addEventListener('click', () => {
-        toggleForm('formCardD', 'btnToggleFormD');
-    });
+    document.getElementById('btnToggleFormH').addEventListener('click', () => toggleForm('formCardH', 'btnToggleFormH'));
+    document.getElementById('btnToggleFormD').addEventListener('click', () => toggleForm('formCardD', 'btnToggleFormD'));
 }
 
 function toggleForm(cardId, btnId) {
     const card = document.getElementById(cardId);
     const btn = document.getElementById(btnId);
-    const isCollapsed = card.classList.contains('collapsed');
-    card.classList.toggle('collapsed', !isCollapsed);
-    btn.textContent = isCollapsed ? '✕ Fermer' : '+ Ajouter';
-
-    if (isCollapsed) {
-        setTimeout(() => {
-            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
-    }
+    const collapsed = card.classList.contains('collapsed');
+    card.classList.toggle('collapsed', !collapsed);
+    btn.textContent = collapsed ? '✕ Fermer' : '+ Ajouter';
+    if (collapsed) setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
 
 // ===== BUILD CATEGORIES =====
 function buildCategoryGrid() {
-    const grid = document.getElementById('catGrid');
-    grid.innerHTML = CATEGORIES.map((c, i) => `
+    document.getElementById('catGrid').innerHTML = CATEGORIES.map(c => `
         <div class="cat-chip" data-cat="${c.emoji} ${c.label}" onclick="selectCat(this, '${c.emoji} ${c.label}')">
             <span class="cat-emoji">${c.emoji}</span>
             ${c.label}
@@ -146,16 +470,10 @@ function setDefaultDates() {
     document.getElementById('filtreDepenseMois').value = month;
     document.getElementById('filtreResumeMois').value = month;
     document.getElementById('tauxHoraire').value = App.settings.tauxHoraire;
-
-    // Devise buttons
-    document.querySelectorAll('.devise-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.devise === App.settings.devise);
-    });
+    document.querySelectorAll('.devise-btn').forEach(b => b.classList.toggle('active', b.dataset.devise === App.settings.devise));
 }
 
-function todayStr() {
-    return new Date().toISOString().split('T')[0];
-}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
 
 function updateMonthLabel() {
     const now = new Date();
@@ -165,29 +483,17 @@ function updateMonthLabel() {
 
 // ===== FORMS =====
 function initForms() {
-    // Horaire
-    document.getElementById('formHoraire').addEventListener('submit', e => {
-        e.preventDefault();
-        addHoraire();
-    });
-
+    document.getElementById('formHoraire').addEventListener('submit', e => { e.preventDefault(); addHoraire(); });
     ['heureDebut','heureFin','pauseMinutes'].forEach(id => {
         document.getElementById(id).addEventListener('input', updatePreview);
     });
-
-    // Dépense
-    document.getElementById('formDepense').addEventListener('submit', e => {
-        e.preventDefault();
-        addDepense();
-    });
+    document.getElementById('formDepense').addEventListener('submit', e => { e.preventDefault(); addDepense(); });
 }
 
-// ===== PREVIEW =====
 function updatePreview() {
     const debut = document.getElementById('heureDebut').value;
     const fin = document.getElementById('heureFin').value;
     const pause = parseInt(document.getElementById('pauseMinutes').value) || 0;
-
     if (debut && fin) {
         const mins = calcMinutes(debut, fin, pause);
         document.getElementById('previewDuree').textContent = formatDuree(mins);
@@ -195,7 +501,6 @@ function updatePreview() {
     }
 }
 
-// ===== ADD HORAIRE =====
 function addHoraire() {
     const date = document.getElementById('dateHoraire').value;
     const debut = document.getElementById('heureDebut').value;
@@ -203,28 +508,15 @@ function addHoraire() {
     const pause = parseInt(document.getElementById('pauseMinutes').value) || 0;
     const note = document.getElementById('noteHoraire').value.trim();
 
-    if (!date || !debut || !fin) {
-        showToast('⚠️ Remplissez date, début et fin', 'error');
-        return;
-    }
-
+    if (!date || !debut || !fin) { showToast('⚠️ Remplissez les champs'); return; }
     const minutes = calcMinutes(debut, fin, pause);
-    if (minutes <= 0) {
-        showToast('⚠️ Durée invalide', 'error');
-        return;
-    }
+    if (minutes <= 0) { showToast('⚠️ Durée invalide'); return; }
 
-    App.horaires.push({
-        id: Date.now(),
-        date, debut, fin, pause, minutes, note,
-        gain: (minutes / 60) * App.settings.tauxHoraire
-    });
-
+    App.horaires.push({ id: Date.now(), date, debut, fin, pause, minutes, note, gain: (minutes / 60) * App.settings.tauxHoraire });
     App.horaires.sort((a, b) => b.date.localeCompare(a.date));
     saveData();
     renderAll();
-
-    showToast(`✅ ${formatDuree(minutes)} ajouté !`, 'success');
+    showToast(`✅ ${formatDuree(minutes)} ajouté !`);
     document.getElementById('heureDebut').value = '';
     document.getElementById('heureFin').value = '';
     document.getElementById('pauseMinutes').value = '0';
@@ -234,28 +526,20 @@ function addHoraire() {
     toggleForm('formCardH', 'btnToggleFormH');
 }
 
-// ===== ADD DEPENSE =====
 function addDepense() {
     const date = document.getElementById('dateDepense').value;
     const montant = parseFloat(document.getElementById('montantDepense').value);
     const categorie = document.getElementById('categorieDepense').value;
     const description = document.getElementById('descriptionDepense').value.trim();
 
-    if (!date || !montant || montant <= 0) {
-        showToast('⚠️ Remplissez date et montant', 'error');
-        return;
-    }
-    if (!categorie) {
-        showToast('⚠️ Choisissez une catégorie', 'error');
-        return;
-    }
+    if (!date || !montant || montant <= 0) { showToast('⚠️ Remplissez date et montant'); return; }
+    if (!categorie) { showToast('⚠️ Choisissez une catégorie'); return; }
 
     App.depenses.push({ id: Date.now(), date, montant, categorie, description });
     App.depenses.sort((a, b) => b.date.localeCompare(a.date));
     saveData();
     renderAll();
-
-    showToast(`✅ ${formatM(montant)} ajouté !`, 'success');
+    showToast(`✅ ${formatM(montant)} ajouté !`);
     document.getElementById('montantDepense').value = '';
     document.getElementById('descriptionDepense').value = '';
     document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
@@ -263,71 +547,47 @@ function addDepense() {
     toggleForm('formCardD', 'btnToggleFormD');
 }
 
-// ===== DELETE =====
 function deleteHoraire(id) {
-    showConfirm('Supprimer cet horaire ?', 'Cette action est irréversible.', () => {
+    showConfirm('Supprimer ?', 'Supprimer cet horaire ?', () => {
         App.horaires = App.horaires.filter(h => h.id !== id);
-        saveData();
-        renderAll();
-        showToast('🗑️ Horaire supprimé', 'info');
+        saveData(); renderAll(); showToast('🗑️ Supprimé');
     });
 }
 
 function deleteDepense(id) {
-    showConfirm('Supprimer cette dépense ?', 'Cette action est irréversible.', () => {
+    showConfirm('Supprimer ?', 'Supprimer cette dépense ?', () => {
         App.depenses = App.depenses.filter(d => d.id !== id);
-        saveData();
-        renderAll();
-        showToast('🗑️ Dépense supprimée', 'info');
+        saveData(); renderAll(); showToast('🗑️ Supprimé');
     });
 }
 
 // ===== MONTH FILTERS =====
 function initMonthFilters() {
-    // Horaires
-    document.getElementById('filtreHoraireMois').addEventListener('change', () => {
-        renderHoraires();
-        renderQuickStatsH();
-    });
+    document.getElementById('filtreHoraireMois').addEventListener('change', () => { renderHoraires(); renderQuickStatsH(); });
     document.getElementById('prevH').addEventListener('click', () => changeMonth('filtreHoraireMois', -1, () => { renderHoraires(); renderQuickStatsH(); }));
     document.getElementById('nextH').addEventListener('click', () => changeMonth('filtreHoraireMois', 1, () => { renderHoraires(); renderQuickStatsH(); }));
 
-    // Depenses
-    document.getElementById('filtreDepenseMois').addEventListener('change', () => {
-        renderDepenses();
-        renderCatSummary();
-        renderQuickStatsD();
-    });
+    document.getElementById('filtreDepenseMois').addEventListener('change', () => { renderDepenses(); renderCatSummary(); renderQuickStatsD(); });
     document.getElementById('prevD').addEventListener('click', () => changeMonth('filtreDepenseMois', -1, () => { renderDepenses(); renderCatSummary(); renderQuickStatsD(); }));
     document.getElementById('nextD').addEventListener('click', () => changeMonth('filtreDepenseMois', 1, () => { renderDepenses(); renderCatSummary(); renderQuickStatsD(); }));
 
-    // Resume
     document.getElementById('filtreResumeMois').addEventListener('change', renderResume);
     document.getElementById('prevR').addEventListener('click', () => changeMonth('filtreResumeMois', -1, renderResume));
     document.getElementById('nextR').addEventListener('click', () => changeMonth('filtreResumeMois', 1, renderResume));
 }
 
-function changeMonth(inputId, delta, callback) {
+function changeMonth(inputId, delta, cb) {
     const input = document.getElementById(inputId);
     if (!input.value) return;
     const [y, m] = input.value.split('-').map(Number);
     const d = new Date(y, m - 1 + delta, 1);
     input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    callback();
+    cb();
 }
 
-// ===== GETTERS =====
-function getHorairesForMonth(monthStr) {
-    return App.horaires.filter(h => h.date.startsWith(monthStr));
-}
-
-function getDepensesForMonth(monthStr) {
-    return App.depenses.filter(d => d.date.startsWith(monthStr));
-}
-
-function currentMonth() {
-    return todayStr().substring(0, 7);
-}
+function getHorairesForMonth(m) { return App.horaires.filter(h => h.date.startsWith(m)); }
+function getDepensesForMonth(m) { return App.depenses.filter(d => d.date.startsWith(m)); }
+function currentMonth() { return todayStr().substring(0, 7); }
 
 // ===== RENDER ALL =====
 function renderAll() {
@@ -356,148 +616,72 @@ function renderDashboard() {
     document.getElementById('totalHeures').textContent = formatDuree(totalMins);
     document.getElementById('totalJours').textContent = jours;
 
-    // Solde
-    document.getElementById('solde').textContent = formatM(Math.abs(solde));
     const badge = document.getElementById('soldeBadge');
     const bar = document.getElementById('soldeBar');
+    document.getElementById('solde').textContent = formatM(Math.abs(solde));
 
     if (solde > 0) {
-        badge.textContent = '✅ Positif';
-        badge.className = 'solde-badge positive';
-        const pct = revenus > 0 ? Math.min((solde / revenus) * 100, 100) : 0;
-        bar.style.width = pct + '%';
-        bar.style.background = 'linear-gradient(90deg, #00c896, #55efc4)';
+        badge.textContent = '✅ Positif'; badge.className = 'solde-badge positive';
+        bar.style.width = (revenus > 0 ? Math.min((solde / revenus) * 100, 100) : 0) + '%';
+        bar.style.background = 'linear-gradient(90deg, #00d2a0, #55efc4)';
     } else if (solde < 0) {
-        badge.textContent = '⚠️ Déficit';
-        badge.className = 'solde-badge negative';
-        bar.style.width = '100%';
-        bar.style.background = 'linear-gradient(90deg, #ff6b6b, #fd79a8)';
+        badge.textContent = '⚠️ Déficit'; badge.className = 'solde-badge negative';
+        bar.style.width = '100%'; bar.style.background = 'linear-gradient(90deg, #ff6b6b, #fd79a8)';
     } else {
-        badge.textContent = '⚖️ Équilibre';
-        badge.className = 'solde-badge neutral';
-        bar.style.width = '50%';
+        badge.textContent = '⚖️ Équilibre'; badge.className = 'solde-badge neutral'; bar.style.width = '50%';
     }
 }
 
-// ===== HORAIRES LIST =====
 function renderHoraires() {
     const m = document.getElementById('filtreHoraireMois').value;
     const horaires = getHorairesForMonth(m);
-    const container = document.getElementById('listeHoraires');
-
-    if (!horaires.length) {
-        container.innerHTML = '<p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter" pour commencer.</small></p>';
-        return;
-    }
-
-    container.innerHTML = horaires.map(h => `
-        <div class="list-item">
-            <div class="list-item-icon">📅</div>
-            <div class="list-item-body">
-                <div class="list-item-title">${formatDate(h.date)} · ${h.debut} – ${h.fin}</div>
-                <div class="list-item-sub">${formatDuree(h.minutes)}${h.pause > 0 ? ' (pause ' + h.pause + 'min)' : ''}${h.note ? ' · ' + h.note : ''}</div>
-            </div>
-            <div class="list-item-right">
-                <span class="list-item-amount amount-green">${formatM(h.gain)}</span>
-                <button class="delete-btn" onclick="deleteHoraire(${h.id})">🗑️</button>
-            </div>
-        </div>
-    `).join('');
+    const c = document.getElementById('listeHoraires');
+    if (!horaires.length) { c.innerHTML = '<p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter"</small></p>'; return; }
+    c.innerHTML = horaires.map(h => `<div class="list-item"><div class="list-item-icon">📅</div><div class="list-item-body"><div class="list-item-title">${formatDate(h.date)} · ${h.debut} – ${h.fin}</div><div class="list-item-sub">${formatDuree(h.minutes)}${h.pause > 0 ? ' (pause ' + h.pause + 'min)' : ''}${h.note ? ' · ' + h.note : ''}</div></div><div class="list-item-right"><span class="list-item-amount amount-green">${formatM(h.gain)}</span><button class="delete-btn" onclick="deleteHoraire(${h.id})">🗑️</button></div></div>`).join('');
 }
 
 function renderQuickStatsH() {
     const m = document.getElementById('filtreHoraireMois').value;
     const horaires = getHorairesForMonth(m);
-    const jours = new Set(horaires.map(h => h.date)).size;
-    const mins = horaires.reduce((s, h) => s + h.minutes, 0);
-    const gain = horaires.reduce((s, h) => s + h.gain, 0);
-
-    document.getElementById('qsJoursH').textContent = jours;
-    document.getElementById('qsHeuresH').textContent = formatDuree(mins);
-    document.getElementById('qsGainH').textContent = formatM(gain);
+    document.getElementById('qsJoursH').textContent = new Set(horaires.map(h => h.date)).size;
+    document.getElementById('qsHeuresH').textContent = formatDuree(horaires.reduce((s, h) => s + h.minutes, 0));
+    document.getElementById('qsGainH').textContent = formatM(horaires.reduce((s, h) => s + h.gain, 0));
 }
 
-// ===== DEPENSES LIST =====
 function renderDepenses() {
     const m = document.getElementById('filtreDepenseMois').value;
     const depenses = getDepensesForMonth(m);
-    const container = document.getElementById('listeDepenses');
-
-    if (!depenses.length) {
-        container.innerHTML = '<p class="empty-state">🎉 Aucune dépense ce mois !<br><small>Profitez-en !</small></p>';
-        return;
-    }
-
-    container.innerHTML = depenses.map(d => {
-        const parts = d.categorie.split(' ');
-        const emoji = parts[0];
-        return `
-            <div class="list-item">
-                <div class="list-item-icon">${emoji}</div>
-                <div class="list-item-body">
-                    <div class="list-item-title">${d.description || d.categorie}</div>
-                    <div class="list-item-sub">${d.categorie} · ${formatDate(d.date)}</div>
-                </div>
-                <div class="list-item-right">
-                    <span class="list-item-amount amount-red">-${formatM(d.montant)}</span>
-                    <button class="delete-btn" onclick="deleteDepense(${d.id})">🗑️</button>
-                </div>
-            </div>
-        `;
-    }).join('');
+    const c = document.getElementById('listeDepenses');
+    if (!depenses.length) { c.innerHTML = '<p class="empty-state">🎉 Aucune dépense ce mois !</p>'; return; }
+    c.innerHTML = depenses.map(d => `<div class="list-item"><div class="list-item-icon">${d.categorie.split(' ')[0]}</div><div class="list-item-body"><div class="list-item-title">${d.description || d.categorie}</div><div class="list-item-sub">${d.categorie} · ${formatDate(d.date)}</div></div><div class="list-item-right"><span class="list-item-amount amount-red">-${formatM(d.montant)}</span><button class="delete-btn" onclick="deleteDepense(${d.id})">🗑️</button></div></div>`).join('');
 }
 
 function renderQuickStatsD() {
     const m = document.getElementById('filtreDepenseMois').value;
     const depenses = getDepensesForMonth(m);
     const total = depenses.reduce((s, d) => s + d.montant, 0);
-    const moy = depenses.length ? total / depenses.length : 0;
-    const max = depenses.length ? Math.max(...depenses.map(d => d.montant)) : 0;
-
     document.getElementById('qsNbD').textContent = depenses.length;
-    document.getElementById('qsMoyD').textContent = formatM(moy);
-    document.getElementById('qsMaxD').textContent = formatM(max);
+    document.getElementById('qsMoyD').textContent = formatM(depenses.length ? total / depenses.length : 0);
+    document.getElementById('qsMaxD').textContent = formatM(depenses.length ? Math.max(...depenses.map(d => d.montant)) : 0);
 }
 
-// ===== CATEGORY SUMMARY =====
 function renderCatSummary() {
     const m = document.getElementById('filtreDepenseMois').value;
     const depenses = getDepensesForMonth(m);
-    const container = document.getElementById('catSummary');
-
-    if (!depenses.length) { container.innerHTML = ''; return; }
-
+    const c = document.getElementById('catSummary');
+    if (!depenses.length) { c.innerHTML = ''; return; }
     const cats = {};
-    depenses.forEach(d => {
-        cats[d.categorie] = (cats[d.categorie] || 0) + d.montant;
-    });
-
+    depenses.forEach(d => { cats[d.categorie] = (cats[d.categorie] || 0) + d.montant; });
     const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
     const max = sorted[0][1];
-
-    container.innerHTML = sorted.map(([cat, amt], i) => {
-        const pct = (amt / max) * 100;
-        const color = CAT_COLORS[i % CAT_COLORS.length];
-        return `
-            <div class="cat-row">
-                <span class="cat-name">${cat}</span>
-                <div class="cat-track">
-                    <div class="cat-fill" style="width:${pct}%;background:${color};"></div>
-                </div>
-                <span class="cat-amount">${formatM(amt)}</span>
-            </div>
-        `;
-    }).join('');
+    c.innerHTML = sorted.map(([cat, amt], i) => `<div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-track"><div class="cat-fill" style="width:${(amt/max)*100}%;background:${CAT_COLORS[i%CAT_COLORS.length]};"></div></div><span class="cat-amount">${formatM(amt)}</span></div>`).join('');
 }
 
-// ===== RESUME =====
 function renderResume() {
     const m = document.getElementById('filtreResumeMois').value;
     if (!m) return;
-
     const horaires = getHorairesForMonth(m);
     const depenses = getDepensesForMonth(m);
-
     const revenus = horaires.reduce((s, h) => s + h.gain, 0);
     const totalDep = depenses.reduce((s, d) => s + d.montant, 0);
     const solde = revenus - totalDep;
@@ -505,95 +689,51 @@ function renderResume() {
     const mins = horaires.reduce((s, h) => s + h.minutes, 0);
     const moy = depenses.length ? totalDep / depenses.length : 0;
 
-    // Bilan
     document.getElementById('bilanRevenus').textContent = formatM(revenus);
     document.getElementById('bilanDepenses').textContent = formatM(totalDep);
-
     const total = revenus + totalDep;
-    const pctRev = total > 0 ? (revenus / total) * 100 : 50;
-    const pctDep = total > 0 ? (totalDep / total) * 100 : 50;
-    document.getElementById('progressGreen').style.width = pctRev + '%';
-    document.getElementById('progressRed').style.width = pctDep + '%';
-
-    const soldeEl = document.getElementById('bilanSolde');
-    soldeEl.textContent = (solde >= 0 ? '' : '-') + formatM(Math.abs(solde));
-    soldeEl.className = solde >= 0 ? 'positive' : 'negative';
-
-    const pct = revenus > 0 ? Math.round((totalDep / revenus) * 100) : 0;
-    document.getElementById('bilanPercent').textContent = revenus > 0
-        ? `Vous avez dépensé ${pct}% de vos revenus`
-        : 'Aucun revenu enregistré ce mois';
-
-    // Stats
+    document.getElementById('progressGreen').style.width = (total > 0 ? (revenus/total)*100 : 50) + '%';
+    document.getElementById('progressRed').style.width = (total > 0 ? (totalDep/total)*100 : 50) + '%';
+    const se = document.getElementById('bilanSolde');
+    se.textContent = (solde >= 0 ? '' : '-') + formatM(Math.abs(solde));
+    se.className = solde >= 0 ? 'positive' : 'negative';
+    const pct = revenus > 0 ? Math.round((totalDep/revenus)*100) : 0;
+    document.getElementById('bilanPercent').textContent = revenus > 0 ? `Vous avez dépensé ${pct}% de vos revenus` : 'Aucun revenu ce mois';
     document.getElementById('statJours').textContent = jours;
     document.getElementById('statHeures').textContent = formatDuree(mins);
     document.getElementById('statNbDep').textContent = depenses.length;
     document.getElementById('statMoyDep').textContent = formatM(moy);
-
-    // Chart
     renderBarChart(m, depenses);
-
-    // Top dépenses
     renderTopDepenses(depenses);
 }
 
 function renderBarChart(mois, depenses) {
-    const container = document.getElementById('barChart');
+    const c = document.getElementById('barChart');
     const [y, mo] = mois.split('-').map(Number);
-    const daysInMonth = new Date(y, mo, 0).getDate();
-
+    const days = new Date(y, mo, 0).getDate();
     const daily = {};
-    depenses.forEach(d => {
-        const day = parseInt(d.date.split('-')[2]);
-        daily[day] = (daily[day] || 0) + d.montant;
-    });
-
+    depenses.forEach(d => { const day = parseInt(d.date.split('-')[2]); daily[day] = (daily[day]||0)+d.montant; });
     const maxVal = Object.values(daily).length ? Math.max(...Object.values(daily)) : 1;
-
     let html = '';
-    for (let day = 1; day <= daysInMonth; day++) {
-        const val = daily[day] || 0;
-        const h = val > 0 ? Math.max((val / maxVal) * 80, 4) : 0;
-        html += `
-            <div class="bar-col">
-                <div class="bar-fill" style="height:${h}px;" title="${day}/${mo}: ${formatM(val)}"></div>
-                <span class="bar-label">${day}</span>
-            </div>
-        `;
+    for (let day = 1; day <= days; day++) {
+        const val = daily[day]||0;
+        const h = val > 0 ? Math.max((val/maxVal)*80, 4) : 0;
+        html += `<div class="bar-col"><div class="bar-fill" style="height:${h}px;" title="${day}/${mo}: ${formatM(val)}"></div><span class="bar-label">${day}</span></div>`;
     }
-
-    container.innerHTML = html || '<p style="color:var(--text2);font-size:0.85rem;text-align:center;width:100%">Aucune dépense</p>';
+    c.innerHTML = html || '<p style="color:var(--text2);font-size:0.85rem;text-align:center;width:100%">Aucune dépense</p>';
 }
 
 function renderTopDepenses(depenses) {
-    const container = document.getElementById('topDepenses');
-    if (!depenses.length) {
-        container.innerHTML = '<p style="color:var(--text2);font-size:0.85rem;text-align:center;padding:12px">Aucune dépense</p>';
-        return;
-    }
-    const sorted = [...depenses].sort((a, b) => b.montant - a.montant).slice(0, 5);
-    container.innerHTML = sorted.map(d => `
-        <div class="top-dep-item">
-            <span>${d.categorie} ${d.description ? '· ' + d.description : ''}</span>
-            <strong>-${formatM(d.montant)}</strong>
-        </div>
-    `).join('');
+    const c = document.getElementById('topDepenses');
+    if (!depenses.length) { c.innerHTML = '<p style="color:var(--text2);font-size:0.85rem;text-align:center;padding:12px">Aucune dépense</p>'; return; }
+    c.innerHTML = [...depenses].sort((a,b)=>b.montant-a.montant).slice(0,5).map(d => `<div class="top-dep-item"><span>${d.categorie} ${d.description?'· '+d.description:''}</span><strong>-${formatM(d.montant)}</strong></div>`).join('');
 }
 
 // ===== SETTINGS =====
 function initSettings() {
-    // Stepper
-    document.getElementById('tauxPlus').addEventListener('click', () => {
-        const input = document.getElementById('tauxHoraire');
-        input.value = (parseFloat(input.value) + 0.5).toFixed(2);
-    });
-    document.getElementById('tauxMinus').addEventListener('click', () => {
-        const input = document.getElementById('tauxHoraire');
-        const val = parseFloat(input.value) - 0.5;
-        if (val >= 0) input.value = val.toFixed(2);
-    });
+    document.getElementById('tauxPlus').addEventListener('click', () => { const i = document.getElementById('tauxHoraire'); i.value = (parseFloat(i.value)+0.5).toFixed(2); });
+    document.getElementById('tauxMinus').addEventListener('click', () => { const i = document.getElementById('tauxHoraire'); const v = parseFloat(i.value)-0.5; if(v>=0)i.value=v.toFixed(2); });
 
-    // Devise
     document.querySelectorAll('.devise-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.devise-btn').forEach(b => b.classList.remove('active'));
@@ -601,48 +741,23 @@ function initSettings() {
         });
     });
 
-    // Save
     document.getElementById('btnSaveSettings').addEventListener('click', () => {
-        const taux = parseFloat(document.getElementById('tauxHoraire').value);
-        const devise = document.querySelector('.devise-btn.active')?.dataset.devise || '€';
-
-        if (isNaN(taux) || taux < 0) {
-            showToast('⚠️ Taux invalide', 'error');
-            return;
-        }
-
-        App.settings.tauxHoraire = taux;
-        App.settings.devise = devise;
-
-        // Recalculate gains
-        App.horaires.forEach(h => {
-            h.gain = (h.minutes / 60) * taux;
-        });
-
-        saveData();
-        renderAll();
-        showToast('⚙️ Réglages sauvegardés !', 'success');
+        App.settings.tauxHoraire = parseFloat(document.getElementById('tauxHoraire').value) || 0;
+        App.settings.devise = document.querySelector('.devise-btn.active')?.dataset.devise || '€';
+        App.horaires.forEach(h => { h.gain = (h.minutes/60)*App.settings.tauxHoraire; });
+        saveData(); renderAll(); showToast('⚙️ Réglages sauvegardés !');
     });
 
-    // Export
     document.getElementById('btnExport').addEventListener('click', () => {
-        const data = {
-            horaires: App.horaires,
-            depenses: App.depenses,
-            settings: App.settings,
-            exportDate: new Date().toISOString()
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const data = { horaires: App.horaires, depenses: App.depenses, settings: App.settings, exportDate: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `monbudget_${todayStr()}.json`;
-        a.click();
+        a.href = url; a.download = `monbudget_${todayStr()}.json`; a.click();
         URL.revokeObjectURL(url);
-        showToast('📤 Données exportées !', 'success');
+        showToast('📤 Données exportées !');
     });
 
-    // Import
     document.getElementById('btnImport').addEventListener('change', e => {
         const file = e.target.files[0];
         if (!file) return;
@@ -650,64 +765,42 @@ function initSettings() {
         reader.onload = ev => {
             try {
                 const data = JSON.parse(ev.target.result);
-                if (data.horaires) App.horaires = data.horaires;
-                if (data.depenses) App.depenses = data.depenses;
-                if (data.settings) App.settings = { ...App.settings, ...data.settings };
-                saveData();
-                setDefaultDates();
-                renderAll();
-                showToast('📥 Données importées !', 'success');
-            } catch {
-                showToast('❌ Fichier invalide', 'error');
-            }
+                if(data.horaires) App.horaires = data.horaires;
+                if(data.depenses) App.depenses = data.depenses;
+                if(data.settings) App.settings = {...App.settings,...data.settings};
+                saveData(); setDefaultDates(); renderAll(); showToast('📥 Données importées !');
+            } catch { showToast('❌ Fichier invalide'); }
         };
         reader.readAsText(file);
         e.target.value = '';
     });
 
-    // Reset
     document.getElementById('btnReset').addEventListener('click', () => {
-        showConfirm(
-            '⚠️ Supprimer tout ?',
-            'Toutes vos données seront effacées définitivement.',
-            () => {
-                App.horaires = [];
-                App.depenses = [];
-                saveData();
-                renderAll();
-                showToast('🗑️ Données supprimées', 'info');
-            }
-        );
+        showConfirm('⚠️ Tout supprimer ?', 'Toutes vos données seront effacées.', () => {
+            App.horaires = []; App.depenses = [];
+            saveData(); renderAll(); showToast('🗑️ Données supprimées');
+        });
     });
 }
 
-// ===== MODAL CONFIRM =====
+// ===== MODALS =====
 function showConfirm(title, message, onConfirm) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalMessage').textContent = message;
     const overlay = document.getElementById('modalOverlay');
     overlay.classList.add('show');
-
-    const confirm = document.getElementById('modalConfirm');
-    const cancel = document.getElementById('modalCancel');
-
     const close = () => overlay.classList.remove('show');
-
-    confirm.onclick = () => { close(); onConfirm(); };
-    cancel.onclick = close;
-    overlay.onclick = e => { if (e.target === overlay) close(); };
+    document.getElementById('modalConfirm').onclick = () => { close(); onConfirm(); };
+    document.getElementById('modalCancel').onclick = close;
+    overlay.onclick = e => { if(e.target === overlay) close(); };
 }
 
-// ===== INSTALL BANNER (iOS) =====
+// ===== INSTALL BANNER =====
 function showInstallBanner() {
     const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
     const isStandalone = window.navigator.standalone === true;
     const dismissed = localStorage.getItem('mb_banner_dismissed');
-
-    if (isIOS && !isStandalone && !dismissed) {
-        document.getElementById('installBanner').classList.add('show');
-    }
-
+    if(isIOS && !isStandalone && !dismissed) document.getElementById('installBanner').classList.add('show');
     document.getElementById('installClose').addEventListener('click', () => {
         document.getElementById('installBanner').classList.remove('show');
         localStorage.setItem('mb_banner_dismissed', '1');
@@ -715,7 +808,7 @@ function showInstallBanner() {
 }
 
 // ===== TOAST =====
-function showToast(msg, type = 'info') {
+function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'toast show';
@@ -725,24 +818,13 @@ function showToast(msg, type = 'info') {
 
 // ===== UTILS =====
 function calcMinutes(debut, fin, pause = 0) {
-    const [dh, dm] = debut.split(':').map(Number);
-    const [fh, fm] = fin.split(':').map(Number);
-    let total = (fh * 60 + fm) - (dh * 60 + dm);
-    if (total < 0) total += 1440;
-    return Math.max(0, total - pause);
+    const [dh,dm] = debut.split(':').map(Number);
+    const [fh,fm] = fin.split(':').map(Number);
+    let t = (fh*60+fm) - (dh*60+dm);
+    if(t<0) t += 1440;
+    return Math.max(0, t - pause);
 }
 
-function formatDuree(minutes) {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}h ${String(m).padStart(2, '0')}`;
-}
-
-function formatM(amount) {
-    return amount.toFixed(2).replace('.', ',') + ' ' + App.settings.devise;
-}
-
-function formatDate(dateStr) {
-    const [y, m, d] = dateStr.split('-');
-    return `${d}/${m}/${y}`;
-}
+function formatDuree(m) { return `${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}`; }
+function formatM(a) { return a.toFixed(2).replace('.',',') + ' ' + App.settings.devise; }
+function formatDate(d) { const [y,m,j] = d.split('-'); return `${j}/${m}/${y}`; }
