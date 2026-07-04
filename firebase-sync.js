@@ -118,11 +118,11 @@ async function uploadLocalDataIfNeeded(uid) {
 
         if (!cloudSettings.exists && App.horaires.length > 0) {
             await ref.collection('data').doc('settings').set({
-                tauxHoraire: App.settings.tauxHoraire,
-                devise: App.settings.devise,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
+    tauxHoraire: App.settings.tauxHoraire,
+    devise: App.settings.devise,
+    arrondi: App.settings.arrondi || 'none',
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+});
             const batch1 = db.batch();
             App.horaires.forEach(h => {
                 const docRef = ref.collection('horaires').doc(String(h.id));
@@ -197,14 +197,15 @@ function startRealtimeSync(uid) {
     }, err => console.error('Paiements sync:', err));
 
     unsubSettings = ref.collection('data').doc('settings').onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.tauxHoraire !== undefined) App.settings.tauxHoraire = data.tauxHoraire;
-            if (data.devise !== undefined) App.settings.devise = data.devise;
-            saveLocalData();
-            if (typeof renderAll === 'function') renderAll();
-        }
-    }, err => console.error('Settings sync:', err));
+    if (doc.exists) {
+        const data = doc.data();
+        if (data.tauxHoraire !== undefined) App.settings.tauxHoraire = data.tauxHoraire;
+        if (data.devise !== undefined) App.settings.devise = data.devise;
+        if (data.arrondi !== undefined) App.settings.arrondi = data.arrondi;
+        saveLocalData();
+        if (typeof renderAll === 'function') renderAll();
+    }
+}, err => console.error('Settings sync:', err));
 }
 
 async function cloudAddHoraire(horaire) {
@@ -258,6 +259,7 @@ async function cloudSaveSettings() {
         await db.collection('users').doc(currentUser.uid).collection('data').doc('settings').set({
             tauxHoraire: App.settings.tauxHoraire,
             devise: App.settings.devise,
+            arrondi: App.settings.arrondi || 'none',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     } catch (e) { console.error('Cloud save settings:', e); }
