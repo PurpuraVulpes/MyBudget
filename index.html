@@ -15,27 +15,101 @@
 </head>
 <body>
 
+    <!-- ===== AUTH SCREEN ===== -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-content">
+            <div class="auth-logo">💰</div>
+            <h1 class="auth-title">MonBudget</h1>
+            <p class="auth-subtitle">Gérez vos finances simplement</p>
+
+            <!-- Login Form -->
+            <div class="auth-form" id="loginForm">
+                <div class="auth-field">
+                    <label>📧 Email</label>
+                    <input type="email" id="loginEmail" placeholder="votre@email.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label>🔑 Mot de passe</label>
+                    <div class="password-wrap">
+                        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+                        <button class="eye-btn" onclick="togglePassword('loginPassword', this)">👁️</button>
+                    </div>
+                </div>
+                <p class="auth-error" id="loginError"></p>
+                <button class="auth-btn primary" onclick="handleLogin()">
+                    <span id="loginBtnText">Se connecter</span>
+                    <div class="spinner" id="loginSpinner"></div>
+                </button>
+                <button class="auth-btn outline" onclick="handleGuestMode()">
+                    Continuer sans compte (local)
+                </button>
+                <div class="auth-links">
+                    <button onclick="showRegister()">Créer un compte</button>
+                    <button onclick="showResetPassword()">Mot de passe oublié ?</button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div class="auth-form hidden" id="registerForm">
+                <div class="auth-field">
+                    <label>📧 Email</label>
+                    <input type="email" id="regEmail" placeholder="votre@email.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label>🔑 Mot de passe</label>
+                    <div class="password-wrap">
+                        <input type="password" id="regPassword" placeholder="Min. 6 caractères" autocomplete="new-password">
+                        <button class="eye-btn" onclick="togglePassword('regPassword', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="auth-field">
+                    <label>🔑 Confirmer</label>
+                    <div class="password-wrap">
+                        <input type="password" id="regPasswordConfirm" placeholder="Même mot de passe" autocomplete="new-password">
+                        <button class="eye-btn" onclick="togglePassword('regPasswordConfirm', this)">👁️</button>
+                    </div>
+                </div>
+                <p class="auth-error" id="regError"></p>
+                <button class="auth-btn primary" onclick="handleRegister()">
+                    <span id="regBtnText">Créer mon compte</span>
+                    <div class="spinner" id="regSpinner"></div>
+                </button>
+                <div class="auth-links">
+                    <button onclick="showLogin()">Déjà un compte ? Se connecter</button>
+                </div>
+            </div>
+
+            <!-- Reset Password Form -->
+            <div class="auth-form hidden" id="resetForm">
+                <p class="auth-info">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+                <div class="auth-field">
+                    <label>📧 Email</label>
+                    <input type="email" id="resetEmail" placeholder="votre@email.com">
+                </div>
+                <p class="auth-error" id="resetError"></p>
+                <p class="auth-success" id="resetSuccess"></p>
+                <button class="auth-btn primary" onclick="handleResetPassword()">
+                    <span id="resetBtnText">Envoyer le lien</span>
+                    <div class="spinner" id="resetSpinner"></div>
+                </button>
+                <div class="auth-links">
+                    <button onclick="showLogin()">Retour à la connexion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== LOCK SCREEN ===== -->
-    <div class="lock-screen" id="lockScreen">
+    <div class="lock-screen hidden" id="lockScreen">
         <div class="lock-content">
             <div class="lock-icon" id="lockIcon">🔒</div>
             <h2 class="lock-title" id="lockTitle">Entrez votre code</h2>
             <p class="lock-subtitle" id="lockSubtitle">6 chiffres requis</p>
-
-            <!-- Dots -->
             <div class="pin-dots" id="pinDots">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
-
-            <!-- Error message -->
             <p class="pin-error" id="pinError"></p>
-
-            <!-- Keypad -->
             <div class="keypad">
                 <button class="key" onclick="pressKey('1')">1</button>
                 <button class="key" onclick="pressKey('2')">2</button>
@@ -50,33 +124,22 @@
                 <button class="key" onclick="pressKey('0')">0</button>
                 <button class="key delete" onclick="pressDelete()">⌫</button>
             </div>
-
-            <!-- Forgot PIN -->
-            <button class="forgot-btn" id="forgotBtn" style="display:none;" onclick="forgotPin()">Code oublié ?</button>
-        </div>
-    </div>
-
-    <!-- ===== INSTALL BANNER ===== -->
-    <div class="install-banner" id="installBanner">
-        <div class="install-banner-content">
-            <span class="install-icon">💰</span>
-            <div class="install-text">
-                <strong>Installer MonBudget</strong>
-                <small>Appuyez sur <span>⎙</span> puis "Sur l'écran d'accueil"</small>
-            </div>
-            <button class="install-close" id="installClose">✕</button>
+            <button class="forgot-btn" id="forgotBtn" onclick="forgotPin()">Code oublié ?</button>
         </div>
     </div>
 
     <!-- ===== MAIN APP ===== -->
-    <div class="app-wrapper" id="appWrapper" style="display:none;">
+    <div class="app-wrapper hidden" id="appWrapper">
 
         <!-- Top Bar -->
         <header class="top-bar">
             <div class="top-bar-inner">
                 <h1>💰 MonBudget</h1>
                 <div class="top-bar-right">
-                    <span id="currentMonthLabel" class="month-badge"></span>
+                    <div class="sync-indicator" id="syncIndicator" title="Synchronisation">
+                        <span class="sync-dot" id="syncDot"></span>
+                        <span class="sync-label" id="syncLabel">Local</span>
+                    </div>
                     <button class="icon-btn" onclick="lockApp()" title="Verrouiller">🔒</button>
                 </div>
             </div>
@@ -85,21 +148,15 @@
         <!-- Scrollable content -->
         <main class="main-scroll" id="mainScroll">
 
-            <!-- Dashboard Cards -->
+            <!-- Dashboard -->
             <section class="dashboard">
                 <div class="card card-revenus" onclick="goTab('horaires')">
-                    <div class="card-top">
-                        <span class="card-emoji">💵</span>
-                        <span class="card-trend" id="trendRevenus"></span>
-                    </div>
+                    <div class="card-top"><span class="card-emoji">💵</span></div>
                     <span class="card-value" id="totalRevenus">0,00 €</span>
                     <span class="card-label">Revenus ce mois</span>
                 </div>
                 <div class="card card-depenses" onclick="goTab('depenses')">
-                    <div class="card-top">
-                        <span class="card-emoji">🛒</span>
-                        <span class="card-trend" id="trendDepenses"></span>
-                    </div>
+                    <div class="card-top"><span class="card-emoji">🛒</span></div>
                     <span class="card-value" id="totalDepenses">0,00 €</span>
                     <span class="card-label">Dépenses ce mois</span>
                 </div>
@@ -110,33 +167,26 @@
                     </div>
                     <span class="card-value" id="solde">0,00 €</span>
                     <span class="card-label">Il me reste</span>
-                    <div class="solde-bar-track">
-                        <div class="solde-bar-fill" id="soldeBar"></div>
-                    </div>
+                    <div class="solde-bar-track"><div class="solde-bar-fill" id="soldeBar"></div></div>
                 </div>
                 <div class="card card-heures">
-                    <div class="card-top">
-                        <span class="card-emoji">⏱️</span>
-                    </div>
+                    <div class="card-top"><span class="card-emoji">⏱️</span></div>
                     <span class="card-value" id="totalHeures">0h 00</span>
                     <span class="card-label">Heures travaillées</span>
                 </div>
                 <div class="card card-jours">
-                    <div class="card-top">
-                        <span class="card-emoji">📅</span>
-                    </div>
+                    <div class="card-top"><span class="card-emoji">📅</span></div>
                     <span class="card-value" id="totalJours">0</span>
                     <span class="card-label">Jours travaillés</span>
                 </div>
             </section>
 
-            <!-- ===== TAB: HORAIRES ===== -->
+            <!-- TAB: HORAIRES -->
             <section class="tab-section" id="tab-horaires">
                 <div class="section-title">
                     <h2>⏰ Mes Horaires</h2>
                     <button class="pill-btn" id="btnToggleFormH">+ Ajouter</button>
                 </div>
-
                 <div class="form-card collapsed" id="formCardH">
                     <form id="formHoraire">
                         <div class="form-field">
@@ -163,7 +213,7 @@
                                 <input type="text" id="noteHoraire" placeholder="Optionnel...">
                             </div>
                         </div>
-                        <div class="preview-box" id="previewBox">
+                        <div class="preview-box">
                             <div class="preview-item">
                                 <span>⏱️ Durée</span>
                                 <strong id="previewDuree">--</strong>
@@ -174,43 +224,30 @@
                                 <strong id="previewGain">--</strong>
                             </div>
                         </div>
-                        <button type="submit" class="submit-btn green">✅ Enregistrer l'horaire</button>
+                        <button type="submit" class="submit-btn green">✅ Enregistrer</button>
                     </form>
                 </div>
-
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevH">‹</button>
                     <input type="month" id="filtreHoraireMois" class="month-input">
                     <button class="arrow-btn" id="nextH">›</button>
                 </div>
-
-                <div class="quick-stats" id="quickStatsH">
-                    <div class="qs-item">
-                        <span id="qsJoursH">0</span>
-                        <small>Jours</small>
-                    </div>
-                    <div class="qs-item">
-                        <span id="qsHeuresH">0h</span>
-                        <small>Heures</small>
-                    </div>
-                    <div class="qs-item">
-                        <span id="qsGainH">0 €</span>
-                        <small>Revenus</small>
-                    </div>
+                <div class="quick-stats">
+                    <div class="qs-item"><span id="qsJoursH">0</span><small>Jours</small></div>
+                    <div class="qs-item"><span id="qsHeuresH">0h</span><small>Heures</small></div>
+                    <div class="qs-item"><span id="qsGainH">0 €</span><small>Revenus</small></div>
                 </div>
-
                 <div class="list-wrapper" id="listeHoraires">
-                    <p class="empty-state">😴 Aucun horaire ce mois.<br><small>Appuyez sur "+ Ajouter"</small></p>
+                    <p class="empty-state">😴 Aucun horaire ce mois.</p>
                 </div>
             </section>
 
-            <!-- ===== TAB: DEPENSES ===== -->
+            <!-- TAB: DEPENSES -->
             <section class="tab-section" id="tab-depenses">
                 <div class="section-title">
                     <h2>💳 Mes Dépenses</h2>
                     <button class="pill-btn red" id="btnToggleFormD">+ Ajouter</button>
                 </div>
-
                 <div class="form-card collapsed" id="formCardD">
                     <form id="formDepense">
                         <div class="form-row-2">
@@ -219,9 +256,8 @@
                                 <input type="date" id="dateDepense" required>
                             </div>
                             <div class="form-field">
-                                <label>💶 Montant (€)</label>
-                                <input type="number" id="montantDepense" step="0.01" min="0.01"
-                                       placeholder="0,00" inputmode="decimal" required>
+                                <label>💶 Montant</label>
+                                <input type="number" id="montantDepense" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" required>
                             </div>
                         </div>
                         <div class="form-field">
@@ -233,50 +269,33 @@
                             <label>📝 Description</label>
                             <input type="text" id="descriptionDepense" placeholder="Ex: Courses Carrefour">
                         </div>
-                        <button type="submit" class="submit-btn red">✅ Enregistrer la dépense</button>
+                        <button type="submit" class="submit-btn red">✅ Enregistrer</button>
                     </form>
                 </div>
-
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevD">‹</button>
                     <input type="month" id="filtreDepenseMois" class="month-input">
                     <button class="arrow-btn" id="nextD">›</button>
                 </div>
-
-                <div class="quick-stats" id="quickStatsD">
-                    <div class="qs-item">
-                        <span id="qsNbD">0</span>
-                        <small>Dépenses</small>
-                    </div>
-                    <div class="qs-item">
-                        <span id="qsMoyD">0 €</span>
-                        <small>Moyenne</small>
-                    </div>
-                    <div class="qs-item">
-                        <span id="qsMaxD">0 €</span>
-                        <small>Max</small>
-                    </div>
+                <div class="quick-stats">
+                    <div class="qs-item"><span id="qsNbD">0</span><small>Dépenses</small></div>
+                    <div class="qs-item"><span id="qsMoyD">0 €</span><small>Moyenne</small></div>
+                    <div class="qs-item"><span id="qsMaxD">0 €</span><small>Max</small></div>
                 </div>
-
                 <div class="cat-summary" id="catSummary"></div>
-
                 <div class="list-wrapper" id="listeDepenses">
                     <p class="empty-state">🎉 Aucune dépense ce mois !</p>
                 </div>
             </section>
 
-            <!-- ===== TAB: RESUME ===== -->
+            <!-- TAB: RESUME -->
             <section class="tab-section" id="tab-resume">
-                <div class="section-title">
-                    <h2>📈 Résumé</h2>
-                </div>
-
+                <div class="section-title"><h2>📈 Résumé</h2></div>
                 <div class="month-filter">
                     <button class="arrow-btn" id="prevR">‹</button>
                     <input type="month" id="filtreResumeMois" class="month-input">
                     <button class="arrow-btn" id="nextR">›</button>
                 </div>
-
                 <div class="bilan-card">
                     <div class="bilan-row">
                         <div class="bilan-col green">
@@ -301,52 +320,50 @@
                     </div>
                     <p class="bilan-percent" id="bilanPercent">—</p>
                 </div>
-
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-icon">📅</span>
-                        <span class="stat-val" id="statJours">0</span>
-                        <span class="stat-lbl">Jours travaillés</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">⏱️</span>
-                        <span class="stat-val" id="statHeures">0h</span>
-                        <span class="stat-lbl">Heures totales</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">💳</span>
-                        <span class="stat-val" id="statNbDep">0</span>
-                        <span class="stat-lbl">Nb dépenses</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">📉</span>
-                        <span class="stat-val" id="statMoyDep">0 €</span>
-                        <span class="stat-lbl">Dépense moy.</span>
-                    </div>
+                    <div class="stat-card"><span class="stat-icon">📅</span><span class="stat-val" id="statJours">0</span><span class="stat-lbl">Jours</span></div>
+                    <div class="stat-card"><span class="stat-icon">⏱️</span><span class="stat-val" id="statHeures">0h</span><span class="stat-lbl">Heures</span></div>
+                    <div class="stat-card"><span class="stat-icon">💳</span><span class="stat-val" id="statNbDep">0</span><span class="stat-lbl">Dépenses</span></div>
+                    <div class="stat-card"><span class="stat-icon">📉</span><span class="stat-val" id="statMoyDep">0 €</span><span class="stat-lbl">Moy.</span></div>
                 </div>
-
                 <div class="chart-card">
                     <h3>📊 Dépenses journalières</h3>
                     <div class="bar-chart" id="barChart"></div>
                 </div>
-
                 <div class="top-card">
                     <h3>🔝 Top dépenses</h3>
                     <div id="topDepenses"></div>
                 </div>
             </section>
 
-            <!-- ===== TAB: SETTINGS ===== -->
+            <!-- TAB: SETTINGS -->
             <section class="tab-section" id="tab-settings">
-                <div class="section-title">
-                    <h2>⚙️ Réglages</h2>
+                <div class="section-title"><h2>⚙️ Réglages</h2></div>
+
+                <!-- Account Card -->
+                <div class="settings-card">
+                    <h3>👤 Mon compte</h3>
+                    <div class="account-info" id="accountInfo">
+                        <div class="account-avatar" id="accountAvatar">👤</div>
+                        <div class="account-details">
+                            <strong id="accountEmail">Mode local</strong>
+                            <small id="accountStatus">Non connecté</small>
+                        </div>
+                    </div>
+                    <div id="accountActions">
+                        <button class="submit-btn purple" id="btnLoginFromSettings" onclick="showAuthFromApp()">🔗 Se connecter / Créer un compte</button>
+                    </div>
+                    <div id="loggedInActions" class="hidden">
+                        <button class="submit-btn outline" onclick="manualSync()">🔄 Synchroniser maintenant</button>
+                        <button class="submit-btn outline danger-text" onclick="handleLogout()">🚪 Se déconnecter</button>
+                    </div>
                 </div>
 
-                <!-- PIN Settings -->
+                <!-- PIN -->
                 <div class="settings-card">
                     <h3>🔒 Code de sécurité</h3>
                     <div class="pin-settings">
-                        <div class="pin-status">
+                        <div class="pin-status" id="pinStatusWrap">
                             <span id="pinStatusIcon">🔓</span>
                             <div>
                                 <strong id="pinStatusText">Aucun code défini</strong>
@@ -354,11 +371,12 @@
                             </div>
                         </div>
                         <button class="submit-btn purple" id="btnSetPin">🔐 Définir un code PIN</button>
-                        <button class="submit-btn outline" id="btnChangePin" style="display:none;">🔄 Changer le code PIN</button>
-                        <button class="submit-btn outline danger-text" id="btnRemovePin" style="display:none;">🗑️ Supprimer le code PIN</button>
+                        <button class="submit-btn outline" id="btnChangePin" style="display:none">🔄 Changer le code</button>
+                        <button class="submit-btn outline danger-text" id="btnRemovePin" style="display:none">🗑️ Supprimer le code</button>
                     </div>
                 </div>
 
+                <!-- Salary -->
                 <div class="settings-card">
                     <h3>💼 Mon salaire</h3>
                     <div class="form-field">
@@ -372,103 +390,54 @@
                     <div class="form-field">
                         <label>Devise</label>
                         <div class="devise-grid">
-                            <button type="button" class="devise-btn active" data-devise="€">€ Euro</button>
-                            <button type="button" class="devise-btn" data-devise="$">$ Dollar</button>
-                            <button type="button" class="devise-btn" data-devise="£">£ Livre</button>
+                            <button type="button" class="devise-btn active" data-devise="€">€</button>
+                            <button type="button" class="devise-btn" data-devise="$">$</button>
+                            <button type="button" class="devise-btn" data-devise="£">£</button>
                             <button type="button" class="devise-btn" data-devise="CHF">CHF</button>
                         </div>
                     </div>
                     <button class="submit-btn green" id="btnSaveSettings">💾 Sauvegarder</button>
                 </div>
 
+                <!-- Data -->
                 <div class="settings-card">
                     <h3>📦 Données</h3>
                     <div class="settings-list">
                         <button class="settings-row" id="btnExport">
-                            <span>📤</span>
-                            <div>
-                                <strong>Exporter mes données</strong>
-                                <small>Fichier JSON de sauvegarde</small>
-                            </div>
-                            <span>›</span>
+                            <span>📤</span><div><strong>Exporter</strong><small>Sauvegarde JSON</small></div><span>›</span>
                         </button>
                         <label class="settings-row" for="btnImport">
-                            <span>📥</span>
-                            <div>
-                                <strong>Importer des données</strong>
-                                <small>Restaurer une sauvegarde</small>
-                            </div>
-                            <span>›</span>
+                            <span>📥</span><div><strong>Importer</strong><small>Restaurer</small></div><span>›</span>
                             <input type="file" id="btnImport" accept=".json" hidden>
                         </label>
                         <button class="settings-row danger" id="btnReset">
-                            <span>🗑️</span>
-                            <div>
-                                <strong>Effacer toutes les données</strong>
-                                <small>Action irréversible</small>
-                            </div>
-                            <span>›</span>
+                            <span>🗑️</span><div><strong>Tout effacer</strong><small>Irréversible</small></div><span>›</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="settings-card">
-                    <h3>📱 Installer l'app</h3>
-                    <div class="install-guide">
-                        <div class="install-step">
-                            <span class="step-num">1</span>
-                            <p>Appuyez sur <strong>Partager ⎙</strong> dans Safari</p>
-                        </div>
-                        <div class="install-step">
-                            <span class="step-num">2</span>
-                            <p>Sélectionnez <strong>"Sur l'écran d'accueil"</strong></p>
-                        </div>
-                        <div class="install-step">
-                            <span class="step-num">3</span>
-                            <p>Appuyez sur <strong>"Ajouter"</strong></p>
-                        </div>
-                        <p class="install-note">✅ L'app fonctionnera comme une vraie app iOS !</p>
-                    </div>
-                </div>
-
-                <div class="app-version">MonBudget v2.1 • Données stockées localement 🔒</div>
+                <div class="app-version">MonBudget v3.0 • Cloud Sync 🔒</div>
             </section>
 
         </main>
 
-        <!-- Bottom Navigation -->
+        <!-- Bottom Nav -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-tab="horaires">
-                <span class="nav-icon">⏰</span>
-                <span class="nav-label">Horaires</span>
-            </button>
-            <button class="nav-btn" data-tab="depenses">
-                <span class="nav-icon">💳</span>
-                <span class="nav-label">Dépenses</span>
-            </button>
-            <button class="nav-btn" data-tab="resume">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">Résumé</span>
-            </button>
-            <button class="nav-btn" data-tab="settings">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Réglages</span>
-            </button>
+            <button class="nav-btn active" data-tab="horaires"><span class="nav-icon">⏰</span><span class="nav-label">Horaires</span></button>
+            <button class="nav-btn" data-tab="depenses"><span class="nav-icon">💳</span><span class="nav-label">Dépenses</span></button>
+            <button class="nav-btn" data-tab="resume"><span class="nav-icon">📈</span><span class="nav-label">Résumé</span></button>
+            <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
         </nav>
     </div>
 
-    <!-- ===== PIN SETUP MODAL ===== -->
+    <!-- PIN Modal -->
     <div class="modal-overlay" id="pinModal">
         <div class="modal">
-            <h3 id="pinModalTitle">🔐 Définir un code PIN</h3>
+            <h3 id="pinModalTitle">🔐 Code PIN</h3>
             <p id="pinModalMsg">Entrez un code à 6 chiffres</p>
             <div class="pin-dots modal-dots" id="modalPinDots">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
             <p class="pin-error" id="modalPinError"></p>
             <div class="keypad modal-keypad">
@@ -503,6 +472,12 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <script src="firebase-sync.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
