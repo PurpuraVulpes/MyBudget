@@ -1050,3 +1050,77 @@ body {
 
 ::-webkit-scrollbar { display: none; }
 ::selection { background: var(--primary-glow); }
+
+/* ===== AJUSTEMENT PAIE ===== */
+.paie-ajustement {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.ajustement-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 10px;
+}
+
+.ajustement-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text3);
+    margin-top: 8px;
+    font-style: italic;
+    min-height: 18px;
+}
+
+.ajustement-hint.positive {
+    color: var(--green);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.ajustement-hint.negative {
+    color: var(--yellow);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.quick-adjust {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.quick-adjust-btn {
+    flex: 1;
+    min-width: 60px;
+    padding: 8px 4px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.quick-adjust-btn:active {
+    background: var(--primary);
+    color: white;
+    transform: scale(0.95);
+}
+
+.quick-adjust-btn[data-adj="reset"] {
+    color: var(--primary-light);
+    border-color: var(--primary);
+}
