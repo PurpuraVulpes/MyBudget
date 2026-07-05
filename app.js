@@ -577,14 +577,44 @@ function quickAddPaiement() {
     var currentM = curM();
     var prevM = getPreviousMonth(currentM);
     var prevHoraires = getH(prevM);
-    var gain = prevHoraires.reduce(function(s, x) { return s + x.gain; }, 0);
-    if (gain <= 0) { showToast('⚠️ Aucune heure le mois précédent'); return; }
+    var gainOriginal = prevHoraires.reduce(function(s, x) { return s + x.gain; }, 0);
+    if (gainOriginal <= 0) { showToast('⚠️ Aucune heure le mois précédent'); return; }
+
+    // Récupérer le montant ajusté
+    var inputAjuste = document.getElementById('montantPaieAjuste');
+    var montantFinal = inputAjuste ? parseFloat(inputAjuste.value) : gainOriginal;
+    if (isNaN(montantFinal) || montantFinal <= 0) {
+        showToast('⚠️ Montant invalide');
+        return;
+    }
+
     var existing = getPaiementsForMonth(currentM);
     if (existing.length > 0) {
         showConfirm('Paie déjà là', existing.length + ' paie(s) déjà. Ajouter ?', function() {
-            createQuickPaie(currentM, gain, prevM);
+            createQuickPaie(currentM, montantFinal, prevM);
         });
-    } else createQuickPaie(currentM, gain, prevM);
+    } else createQuickPaie(currentM, montantFinal, prevM);
+}
+
+function updateDiffHint() {
+    var input = document.getElementById('montantPaieAjuste');
+    var hint = document.getElementById('diffHint');
+    if (!input || !hint) return;
+    var original = parseFloat(input.dataset.original) || 0;
+    var current = parseFloat(input.value) || 0;
+    if (original === 0) { hint.textContent = 'Ajustez selon votre bulletin de paie'; hint.className = 'ajustement-hint'; return; }
+    var diff = current - original;
+    var pct = ((diff / original) * 100).toFixed(1);
+    if (Math.abs(diff) < 0.01) {
+        hint.textContent = '= Montant original';
+        hint.className = 'ajustement-hint';
+    } else if (diff > 0) {
+        hint.textContent = '+ ' + formatM(diff) + ' (+' + pct + '%)';
+        hint.className = 'ajustement-hint positive';
+    } else {
+        hint.textContent = formatM(diff) + ' (' + pct + '%)';
+        hint.className = 'ajustement-hint negative';
+    }
 }
 
 function createQuickPaie(mois, montant, moisSource) {
@@ -838,12 +868,22 @@ function renderPaiements() {
     document.getElementById('previsionPrecedent').textContent = formatM(gainPrec);
     document.getElementById('previsionPrecedentSub').textContent = 'À recevoir en ' + formatMonthShort(currentM);
 
-    var btn = document.getElementById('btnQuickPaie');
+        var btn = document.getElementById('btnQuickPaie');
+    var ajustement = document.getElementById('paieAjustement');
+    var inputAjuste = document.getElementById('montantPaieAjuste');
     if (gainPrec > 0) {
         btn.style.display = 'block';
-        btn.textContent = '✨ Enregistrer ' + formatM(gainPrec) + ' pour ' + formatMonthShort(currentM);
+        if (ajustement) ajustement.style.display = 'block';
+        // Pré-remplir avec le montant original (seulement si vide ou 0)
+        if (inputAjuste && (!inputAjuste.value || parseFloat(inputAjuste.value) === 0)) {
+            inputAjuste.value = gainPrec.toFixed(2);
+        }
+        inputAjuste.dataset.original = gainPrec.toFixed(2);
+        updateDiffHint();
+        btn.textContent = '✨ Enregistrer pour ' + formatMonthShort(currentM);
     } else {
         btn.style.display = 'none';
+        if (ajustement) ajustement.style.display = 'none';
     }
 
     var year = parseInt(document.getElementById('filtreAnneeP').value);
@@ -1094,8 +1134,42 @@ function initForms() {
     var fp = document.getElementById('formPaiement');
     if (fp) fp.addEventListener('submit', function(e) { e.preventDefault(); addPaiement(); });
 
-    var qp = document.getElementById('btnQuickPaie');
+        var qp = document.getElementById('btnQuickPaie');
     if (qp) qp.addEventListener('click', quickAddPaiement);
+
+    // Ajustement paie
+    var inputAjuste = document.getElementById('montantPaieAjuste');
+    if (inputAjuste) inputAjuste.addEventListener('input', updateDiffHint);
+
+    var pMinus = document.getElementById('paieMinus');
+    if (pMinus) pMinus.addEventListener('click', function() {
+        var i = document.getElementById('montantPaieAjuste');
+        var v = parseFloat(i.value) - 10;
+        if (v >= 0) i.value = v.toFixed(2);
+        updateDiffHint();
+    });
+
+    var pPlus = document.getElementById('paiePlus');
+    if (pPlus) pPlus.addEventListener('click', function() {
+        var i = document.getElementById('montantPaieAjuste');
+        i.value = (parseFloat(i.value) + 10).toFixed(2);
+        updateDiffHint();
+    });
+
+    document.querySelectorAll('.quick-adjust-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var i = document.getElementById('montantPaieAjuste');
+            var original = parseFloat(i.dataset.original) || 0;
+            var adj = btn.dataset.adj;
+            if (adj === 'reset') {
+                i.value = original.toFixed(2);
+            } else {
+                var pct = parseFloat(adj);
+                i.value = (original * (1 + pct/100)).toFixed(2);
+            }
+            updateDiffHint();
+        });
+    });
 
     var fe = document.getElementById('formExtra');
     if (fe) fe.addEventListener('submit', function(e) { e.preventDefault(); addExtra(); });
