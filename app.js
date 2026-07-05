@@ -16,6 +16,7 @@ let pinInput = '';
 let modalPinInput = '';
 let modalPinMode = '';
 let modalPinTemp = '';
+var epargneMode = 'deposit';
 
 // ===== CONSTANTES =====
 const CATEGORIES = [
@@ -37,63 +38,70 @@ const CAT_COLORS = ['#9b59b6','#00d2a0','#e17055','#fdcb6e','#e84393','#a29bfe',
 // ===== UTILS =====
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 function curM() { return todayStr().substring(0, 7); }
-function getH(m) { return App.horaires.filter(h => h.date.startsWith(m)); }
-function getD(m) { return App.depenses.filter(d => d.date.startsWith(m)); }
-function getPaiementsForMonth(m) { return App.paiements.filter(p => p.mois === m); }
-function getPaiementsForYear(y) { return App.paiements.filter(p => p.mois.startsWith(String(y))); }
-function getExtrasForMonth(m) { return App.extras.filter(e => e.date.startsWith(m)); }
+function getH(m) { return App.horaires.filter(function(h) { return h.date.startsWith(m); }); }
+function getD(m) { return App.depenses.filter(function(d) { return d.date.startsWith(m); }); }
+function getPaiementsForMonth(m) { return App.paiements.filter(function(p) { return p.mois === m; }); }
+function getPaiementsForYear(y) { return App.paiements.filter(function(p) { return p.mois.startsWith(String(y)); }); }
+function getExtrasForMonth(m) { return App.extras.filter(function(e) { return e.date.startsWith(m); }); }
+function getEpargneForMonth(m) { return App.epargne.filter(function(e) { return e.date.startsWith(m); }); }
+
+function getEpargneSolde() {
+    return App.epargne.reduce(function(s, e) {
+        return s + (e.type === 'deposit' ? e.montant : -e.montant);
+    }, 0);
+}
 
 function getPreviousMonth(m) {
-    const [y, mo] = m.split('-').map(Number);
-    const d = new Date(y, mo - 2, 1);
+    var parts = m.split('-').map(Number);
+    var d = new Date(parts[0], parts[1] - 2, 1);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
 function getNextMonth(m) {
-    const [y, mo] = m.split('-').map(Number);
-    const d = new Date(y, mo, 1);
+    var parts = m.split('-').map(Number);
+    var d = new Date(parts[0], parts[1], 1);
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
 function calcMinutes(d, f, p) {
     p = p || 0;
-    const [dh,dm] = d.split(':').map(Number);
-    const [fh,fm] = f.split(':').map(Number);
-    let t = (fh*60+fm) - (dh*60+dm);
+    var dp = d.split(':').map(Number);
+    var fp = f.split(':').map(Number);
+    var t = (fp[0]*60+fp[1]) - (dp[0]*60+dp[1]);
     if (t < 0) t += 1440;
     t = Math.max(0, t - p);
     return applyArrondi(t);
 }
 
 function applyArrondi(minutes) {
-    const arrondi = App.settings.arrondi || 'none';
+    var arrondi = App.settings.arrondi || 'none';
     if (arrondi === 'none' || minutes <= 0) return minutes;
-    const step = parseInt(arrondi);
+    var step = parseInt(arrondi);
     if (isNaN(step) || step <= 0) return minutes;
     return Math.ceil(minutes / step) * step;
 }
 
 function formatDuree(m) { return Math.floor(m/60) + 'h ' + String(m%60).padStart(2,'0'); }
 function formatM(a) { return a.toFixed(2).replace('.',',') + ' ' + App.settings.devise; }
-function formatDate(d) { const p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function formatDate(d) { var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 
 function formatMonthShort(m) {
-    const [y, mo] = m.split('-').map(Number);
-    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-    return months[mo-1] + ' ' + y;
+    var parts = m.split('-').map(Number);
+    var months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    return months[parts[1]-1] + ' ' + parts[0];
 }
 
 function formatMonthLong(m) {
-    const [y, mo] = m.split('-').map(Number);
-    const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-    return months[mo-1] + ' ' + y;
+    var parts = m.split('-').map(Number);
+    var months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    return months[parts[1]-1] + ' ' + parts[0];
 }
 
 function changeMonth(id, delta, cb) {
-    const input = document.getElementById(id);
+    var input = document.getElementById(id);
     if (!input.value) return;
-    const [y, m] = input.value.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
+    var parts = input.value.split('-').map(Number);
+    var d = new Date(parts[0], parts[1] - 1 + delta, 1);
     input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     cb();
 }
@@ -321,7 +329,7 @@ async function manualSync() {
     updateSyncUI('online', currentUser.email);
 }
 
-// ===== PIN SYSTEM =====
+// ===== PIN =====
 function getStoredPin() { return localStorage.getItem('mb_pin'); }
 function setStoredPin(pin) { localStorage.setItem('mb_pin', pin); }
 function removeStoredPin() { localStorage.removeItem('mb_pin'); }
@@ -587,21 +595,30 @@ function quickAddPaiement() {
     var prevHoraires = getH(prevM);
     var gainOriginal = prevHoraires.reduce(function(s, x) { return s + x.gain; }, 0);
     if (gainOriginal <= 0) { showToast('⚠️ Aucune heure le mois précédent'); return; }
-
-    // Récupérer le montant ajusté
     var inputAjuste = document.getElementById('montantPaieAjuste');
     var montantFinal = inputAjuste ? parseFloat(inputAjuste.value) : gainOriginal;
-    if (isNaN(montantFinal) || montantFinal <= 0) {
-        showToast('⚠️ Montant invalide');
-        return;
-    }
-
+    if (isNaN(montantFinal) || montantFinal <= 0) { showToast('⚠️ Montant invalide'); return; }
     var existing = getPaiementsForMonth(currentM);
     if (existing.length > 0) {
         showConfirm('Paie déjà là', existing.length + ' paie(s) déjà. Ajouter ?', function() {
             createQuickPaie(currentM, montantFinal, prevM);
         });
     } else createQuickPaie(currentM, montantFinal, prevM);
+}
+
+function createQuickPaie(mois, montant, moisSource) {
+    var paiement = {
+        id: Date.now(), mois: mois, montant: montant,
+        description: 'Salaire ' + formatMonthLong(moisSource),
+        date: todayStr()
+    };
+    App.paiements.push(paiement);
+    App.paiements.sort(function(a, b) { return b.mois.localeCompare(a.mois); });
+    saveData();
+    if (typeof cloudAddPaiement === 'function') cloudAddPaiement(paiement);
+    renderAll();
+    renderPaiements();
+    showToast('✨ Paie de ' + formatM(montant) + ' ajoutée !');
 }
 
 function updateDiffHint() {
@@ -625,21 +642,6 @@ function updateDiffHint() {
     }
 }
 
-function createQuickPaie(mois, montant, moisSource) {
-    var paiement = {
-        id: Date.now(), mois: mois, montant: montant,
-        description: 'Salaire ' + formatMonthLong(moisSource),
-        date: todayStr()
-    };
-    App.paiements.push(paiement);
-    App.paiements.sort(function(a, b) { return b.mois.localeCompare(a.mois); });
-    saveData();
-    if (typeof cloudAddPaiement === 'function') cloudAddPaiement(paiement);
-    renderAll();
-    renderPaiements();
-    showToast('✨ Paie de ' + formatM(montant) + ' ajoutée !');
-}
-
 function addExtra() {
     var date = document.getElementById('dateExtra').value;
     var montant = parseFloat(document.getElementById('montantExtra').value);
@@ -660,6 +662,118 @@ function addExtra() {
     document.querySelectorAll('#extraGrid .cat-chip').forEach(function(c) { c.classList.remove('selected'); });
     document.getElementById('sourceExtra').value = '';
     toggleForm('formCardE', 'btnToggleFormE');
+}
+
+// ===== EPARGNE =====
+function openEpargneForm(mode) {
+    epargneMode = mode;
+    var label = document.getElementById('epargneFormLabel');
+    var btn = document.getElementById('btnSubmitEpargne');
+    var card = document.getElementById('formCardEpargne');
+    if (mode === 'deposit') {
+        label.textContent = '💶 Montant à épargner (€)';
+        btn.textContent = '📥 Épargner';
+        btn.className = 'submit-btn green';
+    } else {
+        label.textContent = '💶 Montant à retirer (€)';
+        btn.textContent = '📤 Retirer';
+        btn.className = 'submit-btn purple';
+    }
+    card.classList.remove('collapsed');
+    setTimeout(function() { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+}
+
+function addEpargne() {
+    var montant = parseFloat(document.getElementById('montantEpargne').value);
+    var raison = document.getElementById('raisonEpargne').value.trim();
+    if (!montant || montant <= 0) { showToast('⚠️ Montant invalide'); return; }
+    if (epargneMode === 'withdraw' && montant > getEpargneSolde()) {
+        showToast('⚠️ Solde insuffisant'); return;
+    }
+    var entry = {
+        id: Date.now(), date: todayStr(),
+        montant: montant, type: epargneMode, raison: raison
+    };
+    App.epargne.push(entry);
+    App.epargne.sort(function(a, b) { return b.date.localeCompare(a.date); });
+    saveData();
+    if (typeof cloudAddEpargne === 'function') cloudAddEpargne(entry);
+    renderEpargne();
+    renderDashboard();
+    var msg = epargneMode === 'deposit' ? '📥 ' + formatM(montant) + ' épargné !' : '📤 ' + formatM(montant) + ' retiré !';
+    showToast(msg);
+    document.getElementById('montantEpargne').value = '';
+    document.getElementById('raisonEpargne').value = '';
+    document.getElementById('formCardEpargne').classList.add('collapsed');
+}
+
+function deleteEpargne(id) {
+    showConfirm('Supprimer ?', 'Supprimer ce mouvement ?', function() {
+        App.epargne = App.epargne.filter(function(e) { return e.id !== id; });
+        saveData();
+        if (typeof cloudDeleteEpargne === 'function') cloudDeleteEpargne(id);
+        renderEpargne();
+        renderDashboard();
+        showToast('🗑️ Supprimé');
+    });
+}
+
+// ===== SHOPPING LIST =====
+function selectPrio(el, val) {
+    document.querySelectorAll('.prio-btn').forEach(function(b) { b.classList.remove('active'); });
+    el.classList.add('active');
+}
+
+function addShopItem() {
+    var nom = document.getElementById('nomShop').value.trim();
+    var prix = parseFloat(document.getElementById('prixShop').value) || 0;
+    var note = document.getElementById('noteShop').value.trim();
+    var prioBtn = document.querySelector('.prio-btn.active');
+    var prio = prioBtn ? prioBtn.dataset.prio : 'normal';
+    if (!nom) { showToast('⚠️ Entrez un article'); return; }
+    var item = {
+        id: Date.now(), nom: nom, prix: prix,
+        prio: prio, note: note, bought: false, date: todayStr()
+    };
+    App.shopping.push(item);
+    saveData();
+    if (typeof cloudAddShopItem === 'function') cloudAddShopItem(item);
+    renderShopping();
+    showToast('✅ ' + nom + ' ajouté !');
+    document.getElementById('nomShop').value = '';
+    document.getElementById('prixShop').value = '';
+    document.getElementById('noteShop').value = '';
+    toggleForm('formCardShop', 'btnToggleFormShop');
+}
+
+function toggleShopBought(id) {
+    var item = App.shopping.find(function(s) { return s.id === id; });
+    if (item) {
+        item.bought = !item.bought;
+        saveData();
+        if (typeof cloudAddShopItem === 'function') cloudAddShopItem(item);
+        renderShopping();
+    }
+}
+
+function deleteShopItem(id) {
+    showConfirm('Supprimer ?', 'Supprimer cet article ?', function() {
+        App.shopping = App.shopping.filter(function(s) { return s.id !== id; });
+        saveData();
+        if (typeof cloudDeleteShopItem === 'function') cloudDeleteShopItem(id);
+        renderShopping();
+        showToast('🗑️ Supprimé');
+    });
+}
+
+function switchBudgetTab(sub) {
+    document.querySelectorAll('#tab-depenses .sub-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.subtab === sub);
+    });
+    document.querySelectorAll('#tab-depenses .sub-tab-content').forEach(function(c) {
+        c.classList.toggle('active', c.id === 'subtab-' + sub);
+    });
+    if (sub === 'shopping-list') renderShopping();
 }
 
 // ===== DELETE FUNCTIONS =====
@@ -703,197 +817,6 @@ function deleteExtra(id) {
     });
 }
 
-// ===== EPARGNE =====
-var epargneMode = 'deposit';
-
-function getEpargneForMonth(m) {
-    return App.epargne.filter(function(e) { return e.date.startsWith(m); });
-}
-
-function getEpargneSolde() {
-    return App.epargne.reduce(function(s, e) {
-        return s + (e.type === 'deposit' ? e.montant : -e.montant);
-    }, 0);
-}
-
-function openEpargneForm(mode) {
-    epargneMode = mode;
-    var label = document.getElementById('epargneFormLabel');
-    var btn = document.getElementById('btnSubmitEpargne');
-    var card = document.getElementById('formCardEpargne');
-    if (mode === 'deposit') {
-        label.textContent = '💶 Montant à épargner (€)';
-        btn.textContent = '📥 Épargner';
-        btn.className = 'submit-btn green';
-    } else {
-        label.textContent = '💶 Montant à retirer (€)';
-        btn.textContent = '📤 Retirer';
-        btn.className = 'submit-btn purple';
-    }
-    card.classList.remove('collapsed');
-    setTimeout(function() { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
-}
-
-function addEpargne() {
-    var montant = parseFloat(document.getElementById('montantEpargne').value);
-    var raison = document.getElementById('raisonEpargne').value.trim();
-    if (!montant || montant <= 0) { showToast('⚠️ Montant invalide'); return; }
-    if (epargneMode === 'withdraw' && montant > getEpargneSolde()) {
-        showToast('⚠️ Solde insuffisant'); return;
-    }
-    var entry = {
-        id: Date.now(),
-        date: todayStr(),
-        montant: montant,
-        type: epargneMode,
-        raison: raison
-    };
-    App.epargne.push(entry);
-    App.epargne.sort(function(a, b) { return b.date.localeCompare(a.date); });
-    saveData();
-    if (typeof cloudAddEpargne === 'function') cloudAddEpargne(entry);
-    renderEpargne();
-    renderDashboard();
-    var msg = epargneMode === 'deposit' ? '📥 ' + formatM(montant) + ' épargné !' : '📤 ' + formatM(montant) + ' retiré !';
-    showToast(msg);
-    document.getElementById('montantEpargne').value = '';
-    document.getElementById('raisonEpargne').value = '';
-    document.getElementById('formCardEpargne').classList.add('collapsed');
-}
-
-function deleteEpargne(id) {
-    showConfirm('Supprimer ?', 'Supprimer ce mouvement ?', function() {
-        App.epargne = App.epargne.filter(function(e) { return e.id !== id; });
-        saveData();
-        if (typeof cloudDeleteEpargne === 'function') cloudDeleteEpargne(id);
-        renderEpargne();
-        renderDashboard();
-        showToast('🗑️ Supprimé');
-    });
-}
-
-function renderEpargne() {
-    var solde = getEpargneSolde();
-    document.getElementById('epargneSolde').textContent = formatM(solde);
-    var m = document.getElementById('filtreEpargneMois');
-    if (!m) return;
-    var mStr = m.value;
-    var entries = getEpargneForMonth(mStr);
-    var depots = entries.filter(function(e) { return e.type === 'deposit'; });
-    var retraits = entries.filter(function(e) { return e.type === 'withdraw'; });
-    var totalDepots = depots.reduce(function(s, e) { return s + e.montant; }, 0);
-    var totalRetraits = retraits.reduce(function(s, e) { return s + e.montant; }, 0);
-    document.getElementById('qsNbEpargne').textContent = entries.length;
-    document.getElementById('qsDepotEpargne').textContent = formatM(totalDepots);
-    document.getElementById('qsRetraitEpargne').textContent = formatM(totalRetraits);
-    var c = document.getElementById('listeEpargne');
-    if (!entries.length) { c.innerHTML = '<p class="empty-state">🏦 Aucun mouvement ce mois.</p>'; return; }
-    c.innerHTML = entries.map(function(e) {
-        var icon = e.type === 'deposit' ? '📥' : '📤';
-        var cls = e.type === 'deposit' ? 'amount-green' : 'amount-red';
-        var sign = e.type === 'deposit' ? '+' : '-';
-        return '<div class="list-item"><div class="list-item-icon">' + icon + '</div>' +
-            '<div class="list-item-body"><div class="list-item-title">' + (e.raison || (e.type === 'deposit' ? 'Dépôt' : 'Retrait')) + '</div>' +
-            '<div class="list-item-sub">' + formatDate(e.date) + '</div></div>' +
-            '<div class="list-item-right"><span class="list-item-amount ' + cls + '">' + sign + formatM(e.montant) + '</span>' +
-            '<button class="delete-btn" onclick="deleteEpargne(' + e.id + ')">🗑️</button></div></div>';
-    }).join('');
-}
-
-// ===== SHOPPING LIST =====
-function selectPrio(el, val) {
-    document.querySelectorAll('.prio-btn').forEach(function(b) { b.classList.remove('active'); });
-    el.classList.add('active');
-}
-
-function addShopItem() {
-    var nom = document.getElementById('nomShop').value.trim();
-    var prix = parseFloat(document.getElementById('prixShop').value) || 0;
-    var note = document.getElementById('noteShop').value.trim();
-    var prioBtn = document.querySelector('.prio-btn.active');
-    var prio = prioBtn ? prioBtn.dataset.prio : 'normal';
-    if (!nom) { showToast('⚠️ Entrez un article'); return; }
-    var item = {
-        id: Date.now(),
-        nom: nom,
-        prix: prix,
-        prio: prio,
-        note: note,
-        bought: false,
-        date: todayStr()
-    };
-    App.shopping.push(item);
-    saveData();
-    if (typeof cloudAddShopItem === 'function') cloudAddShopItem(item);
-    renderShopping();
-    showToast('✅ ' + nom + ' ajouté !');
-    document.getElementById('nomShop').value = '';
-    document.getElementById('prixShop').value = '';
-    document.getElementById('noteShop').value = '';
-    toggleForm('formCardShop', 'btnToggleFormShop');
-}
-
-function toggleShopBought(id) {
-    var item = App.shopping.find(function(s) { return s.id === id; });
-    if (item) {
-        item.bought = !item.bought;
-        saveData();
-        if (typeof cloudAddShopItem === 'function') cloudAddShopItem(item);
-        renderShopping();
-    }
-}
-
-function deleteShopItem(id) {
-    showConfirm('Supprimer ?', 'Supprimer cet article ?', function() {
-        App.shopping = App.shopping.filter(function(s) { return s.id !== id; });
-        saveData();
-        if (typeof cloudDeleteShopItem === 'function') cloudDeleteShopItem(id);
-        renderShopping();
-        showToast('🗑️ Supprimé');
-    });
-}
-
-function renderShopping() {
-    var summary = document.getElementById('shopSummary');
-    var c = document.getElementById('listeShop');
-    var remaining = App.shopping.filter(function(s) { return !s.bought; });
-    var bought = App.shopping.filter(function(s) { return s.bought; });
-    var totalRemaining = remaining.reduce(function(s, i) { return s + i.prix; }, 0);
-    if (App.shopping.length > 0) {
-        summary.innerHTML = '<div><span class="shop-total-label">🛒 ' + remaining.length + ' article(s) restant(s)</span></div><span class="shop-total-amount">' + formatM(totalRemaining) + '</span>';
-    } else { summary.innerHTML = ''; }
-    if (!App.shopping.length) { c.innerHTML = '<p class="empty-state">🛒 Liste vide.</p>'; return; }
-    var prioOrder = { urgent: 0, normal: 1, envie: 2 };
-    var sorted = remaining.sort(function(a, b) { return (prioOrder[a.prio] || 1) - (prioOrder[b.prio] || 1); });
-    var allItems = sorted.concat(bought);
-    c.innerHTML = allItems.map(function(s) {
-        var boughtClass = s.bought ? ' bought' : '';
-        var checkClass = s.bought ? ' checked' : '';
-        var checkIcon = s.bought ? '✓' : '';
-        var prioTag = '';
-        if (s.prio === 'urgent') prioTag = '<span class="prio-tag urgent">🔴 Urgent</span>';
-        else if (s.prio === 'envie') prioTag = '<span class="prio-tag envie">💫 Envie</span>';
-        else prioTag = '<span class="prio-tag normal">📦 Normal</span>';
-        return '<div class="shop-item' + boughtClass + '">' +
-            '<button class="shop-checkbox' + checkClass + '" onclick="toggleShopBought(' + s.id + ')">' + checkIcon + '</button>' +
-            '<div class="shop-item-body"><div class="shop-item-name">' + s.nom + '</div>' +
-            (s.note ? '<div class="shop-item-note">' + s.note + '</div>' : '') + '</div>' +
-            '<div class="shop-item-right">' + (s.prix > 0 ? '<span class="shop-item-price">' + formatM(s.prix) + '</span>' : '') +
-            prioTag +
-            '<button class="delete-btn" onclick="deleteShopItem(' + s.id + ')">🗑️</button></div></div>';
-    }).join('');
-}
-
-function switchBudgetTab(sub) {
-    document.querySelectorAll('#tab-depenses .sub-tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.subtab === sub);
-    });
-    document.querySelectorAll('#tab-depenses .sub-tab-content').forEach(function(c) {
-        c.classList.toggle('active', c.id === 'subtab-' + sub);
-    });
-    if (sub === 'shopping-list') renderShopping();
-}
-
 // ===== RENDER ALL =====
 function renderAll() {
     renderDashboard();
@@ -902,6 +825,8 @@ function renderAll() {
     renderDepenses();
     renderCatSummary();
     renderQuickStatsD();
+    if (typeof renderEpargne === 'function') renderEpargne();
+    if (typeof renderShopping === 'function') renderShopping();
 }
 
 // ===== RENDER DASHBOARD =====
@@ -962,10 +887,10 @@ function renderDashboard() {
     var paieMois = getPaiementsForMonth(m);
     var totalPaie = paieMois.reduce(function(s, p) { return s + p.montant; }, 0);
     var paieBadge = document.getElementById('paieBadge');
-    var paieRecue = document.getElementById('paieRecue');
+    var paieRecueEl = document.getElementById('paieRecue');
     var paieLabel = document.getElementById('paieLabel');
-    if (paieBadge && paieRecue && paieLabel) {
-        paieRecue.textContent = formatM(totalPaie);
+    if (paieBadge && paieRecueEl && paieLabel) {
+        paieRecueEl.textContent = formatM(totalPaie);
         if (totalPaie > 0) {
             paieBadge.textContent = '✅ Reçu';
             paieBadge.className = 'solde-badge positive';
@@ -976,7 +901,7 @@ function renderDashboard() {
             if (prevGain > 0) {
                 paieBadge.textContent = '⏳ À recevoir';
                 paieBadge.className = 'solde-badge warning';
-                paieRecue.textContent = formatM(prevGain);
+                paieRecueEl.textContent = formatM(prevGain);
                 paieLabel.textContent = 'Paie prévue (non reçue)';
             } else {
                 paieBadge.textContent = '—';
@@ -1067,17 +992,16 @@ function renderPaiements() {
     document.getElementById('previsionPrecedent').textContent = formatM(gainPrec);
     document.getElementById('previsionPrecedentSub').textContent = 'À recevoir en ' + formatMonthShort(currentM);
 
-        var btn = document.getElementById('btnQuickPaie');
+    var btn = document.getElementById('btnQuickPaie');
     var ajustement = document.getElementById('paieAjustement');
     var inputAjuste = document.getElementById('montantPaieAjuste');
     if (gainPrec > 0) {
         btn.style.display = 'block';
         if (ajustement) ajustement.style.display = 'block';
-        // Pré-remplir avec le montant original (seulement si vide ou 0)
         if (inputAjuste && (!inputAjuste.value || parseFloat(inputAjuste.value) === 0)) {
             inputAjuste.value = gainPrec.toFixed(2);
         }
-        inputAjuste.dataset.original = gainPrec.toFixed(2);
+        if (inputAjuste) inputAjuste.dataset.original = gainPrec.toFixed(2);
         updateDiffHint();
         btn.textContent = '✨ Enregistrer pour ' + formatMonthShort(currentM);
     } else {
@@ -1142,6 +1066,69 @@ function renderExtras() {
     }).join('');
 }
 
+// ===== RENDER EPARGNE =====
+function renderEpargne() {
+    var solde = getEpargneSolde();
+    var soldeEl = document.getElementById('epargneSolde');
+    if (soldeEl) soldeEl.textContent = formatM(solde);
+    var m = document.getElementById('filtreEpargneMois');
+    if (!m) return;
+    var mStr = m.value;
+    var entries = getEpargneForMonth(mStr);
+    var depots = entries.filter(function(e) { return e.type === 'deposit'; });
+    var retraits = entries.filter(function(e) { return e.type === 'withdraw'; });
+    var totalDepots = depots.reduce(function(s, e) { return s + e.montant; }, 0);
+    var totalRetraits = retraits.reduce(function(s, e) { return s + e.montant; }, 0);
+    document.getElementById('qsNbEpargne').textContent = entries.length;
+    document.getElementById('qsDepotEpargne').textContent = formatM(totalDepots);
+    document.getElementById('qsRetraitEpargne').textContent = formatM(totalRetraits);
+    var c = document.getElementById('listeEpargne');
+    if (!entries.length) { c.innerHTML = '<p class="empty-state">🏦 Aucun mouvement ce mois.</p>'; return; }
+    c.innerHTML = entries.map(function(e) {
+        var icon = e.type === 'deposit' ? '📥' : '📤';
+        var cls = e.type === 'deposit' ? 'amount-green' : 'amount-red';
+        var sign = e.type === 'deposit' ? '+' : '-';
+        return '<div class="list-item"><div class="list-item-icon">' + icon + '</div>' +
+            '<div class="list-item-body"><div class="list-item-title">' + (e.raison || (e.type === 'deposit' ? 'Dépôt' : 'Retrait')) + '</div>' +
+            '<div class="list-item-sub">' + formatDate(e.date) + '</div></div>' +
+            '<div class="list-item-right"><span class="list-item-amount ' + cls + '">' + sign + formatM(e.montant) + '</span>' +
+            '<button class="delete-btn" onclick="deleteEpargne(' + e.id + ')">🗑️</button></div></div>';
+    }).join('');
+}
+
+// ===== RENDER SHOPPING =====
+function renderShopping() {
+    var summary = document.getElementById('shopSummary');
+    var c = document.getElementById('listeShop');
+    if (!summary || !c) return;
+    var remaining = App.shopping.filter(function(s) { return !s.bought; });
+    var bought = App.shopping.filter(function(s) { return s.bought; });
+    var totalRemaining = remaining.reduce(function(s, i) { return s + i.prix; }, 0);
+    if (App.shopping.length > 0) {
+        summary.innerHTML = '<div><span class="shop-total-label">🛒 ' + remaining.length + ' article(s) restant(s)</span></div><span class="shop-total-amount">' + formatM(totalRemaining) + '</span>';
+    } else { summary.innerHTML = ''; }
+    if (!App.shopping.length) { c.innerHTML = '<p class="empty-state">🛒 Liste vide.</p>'; return; }
+    var prioOrder = { urgent: 0, normal: 1, envie: 2 };
+    var sorted = remaining.sort(function(a, b) { return (prioOrder[a.prio] || 1) - (prioOrder[b.prio] || 1); });
+    var allItems = sorted.concat(bought);
+    c.innerHTML = allItems.map(function(s) {
+        var boughtClass = s.bought ? ' bought' : '';
+        var checkClass = s.bought ? ' checked' : '';
+        var checkIcon = s.bought ? '✓' : '';
+        var prioTag = '';
+        if (s.prio === 'urgent') prioTag = '<span class="prio-tag urgent">🔴 Urgent</span>';
+        else if (s.prio === 'envie') prioTag = '<span class="prio-tag envie">💫 Envie</span>';
+        else prioTag = '<span class="prio-tag normal">📦 Normal</span>';
+        return '<div class="shop-item' + boughtClass + '">' +
+            '<button class="shop-checkbox' + checkClass + '" onclick="toggleShopBought(' + s.id + ')">' + checkIcon + '</button>' +
+            '<div class="shop-item-body"><div class="shop-item-name">' + s.nom + '</div>' +
+            (s.note ? '<div class="shop-item-note">' + s.note + '</div>' : '') + '</div>' +
+            '<div class="shop-item-right">' + (s.prix > 0 ? '<span class="shop-item-price">' + formatM(s.prix) + '</span>' : '') +
+            prioTag +
+            '<button class="delete-btn" onclick="deleteShopItem(' + s.id + ')">🗑️</button></div></div>';
+    }).join('');
+}
+
 // ===== RENDER RESUME =====
 function renderResume() {
     var m = document.getElementById('filtreResumeMois').value;
@@ -1172,7 +1159,7 @@ function renderResume() {
             if (R.totalExtras > 0) {
                 html += '<div class="revenus-detail-row"><span class="rd-label">🎁 Revenus supplémentaires (' + R.nbExtras + ')</span><span class="rd-amount">+' + formatM(R.totalExtras) + '</span></div>';
             }
-            html += '<div class="revenus-detail-row"><span class="rd-label">💵 <strong>Total revenus</strong></span><span class="rd-amount">' + formatM(R.total) + '</span></div>';
+            html += '<div class="revenus-detail-row"><span class="rd-label">💵 <strong>Total revenus</strong></span><span class="rd-amount">' + formatM(rev) + '</span></div>';
         }
         rd.innerHTML = html;
     }
@@ -1200,13 +1187,13 @@ function renderResume() {
     });
     var dailyVals = Object.values(daily);
     var mx = dailyVals.length ? Math.max.apply(null, dailyVals) : 1;
-    var html = '';
+    var htmlChart = '';
     for (var i = 1; i <= days; i++) {
         var v = daily[i] || 0;
         var ht = v > 0 ? Math.max((v/mx)*80, 4) : 0;
-        html += '<div class="bar-col"><div class="bar-fill" style="height:' + ht + 'px" title="' + i + '/' + mo + ': ' + formatM(v) + '"></div><span class="bar-label">' + i + '</span></div>';
+        htmlChart += '<div class="bar-col"><div class="bar-fill" style="height:' + ht + 'px" title="' + i + '/' + mo + ': ' + formatM(v) + '"></div><span class="bar-label">' + i + '</span></div>';
     }
-    ct.innerHTML = html || '<p style="color:var(--text2);text-align:center;width:100%">Aucune dépense</p>';
+    ct.innerHTML = htmlChart || '<p style="color:var(--text2);text-align:center;width:100%">Aucune dépense</p>';
 
     var tp = document.getElementById('topDepenses');
     if (!d.length) { tp.innerHTML = '<p style="color:var(--text2);text-align:center;padding:12px">Aucune</p>'; return; }
@@ -1225,11 +1212,16 @@ function goTab(tab) {
         s.classList.toggle('active', s.id === 'tab-' + tab);
     });
     document.getElementById('mainScroll').scrollTo({ top: 0, behavior: 'smooth' });
-    if (tab === 'resume') renderResume();
-    if (tab === 'depenses') renderCatSummary();
-        if (tab === 'paiements') { renderPaiements(); renderExtras(); }
-    if (tab === 'epargne') renderEpargne();
-    if (tab === 'depenses') renderShopping();
+    if (tab === 'resume' && typeof renderResume === 'function') renderResume();
+    if (tab === 'depenses') {
+        if (typeof renderCatSummary === 'function') renderCatSummary();
+        if (typeof renderShopping === 'function') renderShopping();
+    }
+    if (tab === 'paiements') {
+        if (typeof renderPaiements === 'function') renderPaiements();
+        if (typeof renderExtras === 'function') renderExtras();
+    }
+    if (tab === 'epargne' && typeof renderEpargne === 'function') renderEpargne();
 }
 
 function switchSubTab(sub) {
@@ -1298,7 +1290,7 @@ function setDefaultDates() {
     if (mp) mp.value = month;
     var de = document.getElementById('dateExtra');
     if (de) de.value = today;
-        var fem = document.getElementById('filtreExtraMois');
+    var fem = document.getElementById('filtreExtraMois');
     if (fem) fem.value = month;
     var fep = document.getElementById('filtreEpargneMois');
     if (fep) fep.value = month;
@@ -1337,10 +1329,9 @@ function initForms() {
     var fp = document.getElementById('formPaiement');
     if (fp) fp.addEventListener('submit', function(e) { e.preventDefault(); addPaiement(); });
 
-        var qp = document.getElementById('btnQuickPaie');
+    var qp = document.getElementById('btnQuickPaie');
     if (qp) qp.addEventListener('click', quickAddPaiement);
 
-    // Ajustement paie
     var inputAjuste = document.getElementById('montantPaieAjuste');
     if (inputAjuste) inputAjuste.addEventListener('input', updateDiffHint);
 
@@ -1374,7 +1365,7 @@ function initForms() {
         });
     });
 
-        var fe = document.getElementById('formExtra');
+    var fe = document.getElementById('formExtra');
     if (fe) fe.addEventListener('submit', function(e) { e.preventDefault(); addExtra(); });
 
     var fep = document.getElementById('formEpargne');
@@ -1387,6 +1378,7 @@ function initForms() {
 
     var fsh = document.getElementById('formShop');
     if (fsh) fsh.addEventListener('submit', function(e) { e.preventDefault(); addShopItem(); });
+}
 
 // ===== INIT TAB TOGGLES =====
 function initTabs() {
@@ -1394,7 +1386,7 @@ function initTabs() {
     document.getElementById('btnToggleFormD').addEventListener('click', function() { toggleForm('formCardD', 'btnToggleFormD'); });
     var btnP = document.getElementById('btnToggleFormP');
     if (btnP) btnP.addEventListener('click', function() { toggleForm('formCardP', 'btnToggleFormP'); });
-        var btnE = document.getElementById('btnToggleFormE');
+    var btnE = document.getElementById('btnToggleFormE');
     if (btnE) btnE.addEventListener('click', function() { toggleForm('formCardE', 'btnToggleFormE'); });
     var btnShop = document.getElementById('btnToggleFormShop');
     if (btnShop) btnShop.addEventListener('click', function() { toggleForm('formCardShop', 'btnToggleFormShop'); });
@@ -1436,7 +1428,7 @@ function initMonthFilters() {
     var fem = document.getElementById('filtreExtraMois');
     if (fem) {
         fem.addEventListener('change', renderExtras);
-             document.getElementById('prevE').addEventListener('click', function() { changeMonth('filtreExtraMois', -1, renderExtras); });
+        document.getElementById('prevE').addEventListener('click', function() { changeMonth('filtreExtraMois', -1, renderExtras); });
         document.getElementById('nextE').addEventListener('click', function() { changeMonth('filtreExtraMois', 1, renderExtras); });
     }
 
@@ -1448,7 +1440,7 @@ function initMonthFilters() {
     }
 }
 
-// ===== INIT PIN SETTINGS =====
+// ===== INIT PIN =====
 function initPinSettings() {
     updatePinStatus();
     document.getElementById('btnSetPin').addEventListener('click', function() { openPinModal('setup'); });
@@ -1456,7 +1448,7 @@ function initPinSettings() {
     document.getElementById('btnRemovePin').addEventListener('click', function() { openPinModal('remove'); });
 }
 
-// ===== INIT THEME SELECTOR =====
+// ===== INIT THEME =====
 function initThemeSelector() {
     document.querySelectorAll('.theme-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -1536,7 +1528,7 @@ function initSettings() {
     });
 
     document.getElementById('btnExport').addEventListener('click', function() {
-                var data = {
+        var data = {
             horaires: App.horaires,
             depenses: App.depenses,
             paiements: App.paiements,
@@ -1564,7 +1556,7 @@ function initSettings() {
                 if (data.horaires) App.horaires = data.horaires;
                 if (data.depenses) App.depenses = data.depenses;
                 if (data.paiements) App.paiements = data.paiements;
-                               if (data.extras) App.extras = data.extras;
+                if (data.extras) App.extras = data.extras;
                 if (data.epargne) App.epargne = data.epargne;
                 if (data.shopping) App.shopping = data.shopping;
                 if (data.settings) App.settings = Object.assign({}, App.settings, data.settings);
@@ -1587,7 +1579,7 @@ function initSettings() {
             App.horaires = [];
             App.depenses = [];
             App.paiements = [];
-                       App.extras = [];
+            App.extras = [];
             App.epargne = [];
             App.shopping = [];
             saveData();
