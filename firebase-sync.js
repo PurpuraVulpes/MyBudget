@@ -15,11 +15,13 @@ const firebaseConfig = {
 
 // ============================================================
 
+
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
     console.warn('Firestore persistence:', err.code);
 });
 
@@ -28,22 +30,21 @@ let isGuestMode = false;
 let unsubHoraires = null;
 let unsubDepenses = null;
 let unsubPaiements = null;
+let unsubExtras = null;
 let unsubSettings = null;
 
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(function(user) {
     currentUser = user;
-    if (user && !isGuestMode) {
-        onUserLoggedIn(user);
-    }
+    if (user && !isGuestMode) onUserLoggedIn(user);
 });
 
 async function loginWithEmail(email, password) {
-    const cred = await auth.signInWithEmailAndPassword(email, password);
+    var cred = await auth.signInWithEmailAndPassword(email, password);
     return cred.user;
 }
 
 async function registerWithEmail(email, password) {
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    var cred = await auth.createUserWithEmailAndPassword(email, password);
     return cred.user;
 }
 
@@ -55,6 +56,7 @@ async function logout() {
     if (unsubHoraires) { unsubHoraires(); unsubHoraires = null; }
     if (unsubDepenses) { unsubDepenses(); unsubDepenses = null; }
     if (unsubPaiements) { unsubPaiements(); unsubPaiements = null; }
+    if (unsubExtras) { unsubExtras(); unsubExtras = null; }
     if (unsubSettings) { unsubSettings(); unsubSettings = null; }
     await auth.signOut();
     currentUser = null;
@@ -68,24 +70,20 @@ function onUserLoggedIn(user) {
 }
 
 function updateSyncUI(status, email) {
-    const dot = document.getElementById('syncDot');
-    const label = document.getElementById('syncLabel');
-    const accEmail = document.getElementById('accountEmail');
-    const accStatus = document.getElementById('accountStatus');
-    const accAvatar = document.getElementById('accountAvatar');
-    const accInfo = document.getElementById('accountInfo');
-    const loginBtn = document.getElementById('btnLoginFromSettings');
-    const loggedActions = document.getElementById('loggedInActions');
-    const accountActions = document.getElementById('accountActions');
-
+    var dot = document.getElementById('syncDot');
+    var label = document.getElementById('syncLabel');
+    var accEmail = document.getElementById('accountEmail');
+    var accStatus = document.getElementById('accountStatus');
+    var accInfo = document.getElementById('accountInfo');
+    var loginBtn = document.getElementById('btnLoginFromSettings');
+    var loggedActions = document.getElementById('loggedInActions');
+    var accountActions = document.getElementById('accountActions');
     if (!dot) return;
-
     if (status === 'online') {
         dot.className = 'sync-dot online';
         label.textContent = 'Cloud';
         if (accEmail) accEmail.textContent = email || 'Connecté';
         if (accStatus) accStatus.textContent = '☁️ Synchronisé';
-        if (accAvatar) accAvatar.textContent = '👤';
         if (accInfo) accInfo.classList.add('connected');
         if (loginBtn) loginBtn.style.display = 'none';
         if (accountActions) accountActions.style.display = 'none';
@@ -98,7 +96,6 @@ function updateSyncUI(status, email) {
         label.textContent = 'Local';
         if (accEmail) accEmail.textContent = 'Mode local';
         if (accStatus) accStatus.textContent = 'Non connecté';
-        if (accAvatar) accAvatar.textContent = '👤';
         if (accInfo) accInfo.classList.remove('connected');
         if (loginBtn) loginBtn.style.display = 'block';
         if (accountActions) accountActions.style.display = 'block';
@@ -107,150 +104,175 @@ function updateSyncUI(status, email) {
 }
 
 async function uploadLocalDataIfNeeded(uid) {
-    const uploaded = localStorage.getItem('mb_uploaded_' + uid);
+    var uploaded = localStorage.getItem('mb_uploaded_' + uid);
     if (uploaded) return;
-
     updateSyncUI('syncing');
-
     try {
-        const ref = db.collection('users').doc(uid);
-        const cloudSettings = await ref.collection('data').doc('settings').get();
-
+        var ref = db.collection('users').doc(uid);
+        var cloudSettings = await ref.collection('data').doc('settings').get();
         if (!cloudSettings.exists && App.horaires.length > 0) {
             await ref.collection('data').doc('settings').set({
-    tauxHoraire: App.settings.tauxHoraire,
-    devise: App.settings.devise,
-    arrondi: App.settings.arrondi || 'none',
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-});
-            const batch1 = db.batch();
-            App.horaires.forEach(h => {
-                const docRef = ref.collection('horaires').doc(String(h.id));
-                batch1.set(docRef, { ...h, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                tauxHoraire: App.settings.tauxHoraire,
+                devise: App.settings.devise,
+                arrondi: App.settings.arrondi || 'none',
+                theme: App.settings.theme || 'purple',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            var batch1 = db.batch();
+            App.horaires.forEach(function(h) {
+                var docRef = ref.collection('horaires').doc(String(h.id));
+                batch1.set(docRef, Object.assign({}, h, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
             });
             await batch1.commit();
-
-            const batch2 = db.batch();
-            App.depenses.forEach(d => {
-                const docRef = ref.collection('depenses').doc(String(d.id));
-                batch2.set(docRef, { ...d, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            var batch2 = db.batch();
+            App.depenses.forEach(function(d) {
+                var docRef = ref.collection('depenses').doc(String(d.id));
+                batch2.set(docRef, Object.assign({}, d, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
             });
             await batch2.commit();
-
             if (App.paiements && App.paiements.length > 0) {
-                const batch3 = db.batch();
-                App.paiements.forEach(p => {
-                    const docRef = ref.collection('paiements').doc(String(p.id));
-                    batch3.set(docRef, { ...p, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                var batch3 = db.batch();
+                App.paiements.forEach(function(p) {
+                    var docRef = ref.collection('paiements').doc(String(p.id));
+                    batch3.set(docRef, Object.assign({}, p, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
                 });
                 await batch3.commit();
             }
-
-            showToast('☁️ Données locales synchronisées !');
+            if (App.extras && App.extras.length > 0) {
+                var batch4 = db.batch();
+                App.extras.forEach(function(e) {
+                    var docRef = ref.collection('extras').doc(String(e.id));
+                    batch4.set(docRef, Object.assign({}, e, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+                });
+                await batch4.commit();
+            }
+            showToast('☁️ Données synchronisées !');
         }
-
         localStorage.setItem('mb_uploaded_' + uid, '1');
-    } catch (e) {
-        console.error('Upload error:', e);
-    }
-
-    updateSyncUI('online', currentUser?.email);
+    } catch (e) { console.error('Upload error:', e); }
+    updateSyncUI('online', currentUser ? currentUser.email : null);
 }
 
 function startRealtimeSync(uid) {
-    const ref = db.collection('users').doc(uid);
-
-    unsubHoraires = ref.collection('horaires').onSnapshot(snapshot => {
+    var ref = db.collection('users').doc(uid);
+    unsubHoraires = ref.collection('horaires').onSnapshot(function(snapshot) {
         App.horaires = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
             delete data.updatedAt;
             App.horaires.push(data);
         });
-        App.horaires.sort((a, b) => b.date.localeCompare(a.date));
+        App.horaires.sort(function(a, b) { return b.date.localeCompare(a.date); });
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Horaires sync:', err));
+    }, function(err) { console.error('Horaires:', err); });
 
-    unsubDepenses = ref.collection('depenses').onSnapshot(snapshot => {
+    unsubDepenses = ref.collection('depenses').onSnapshot(function(snapshot) {
         App.depenses = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
             delete data.updatedAt;
             App.depenses.push(data);
         });
-        App.depenses.sort((a, b) => b.date.localeCompare(a.date));
+        App.depenses.sort(function(a, b) { return b.date.localeCompare(a.date); });
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Depenses sync:', err));
+    }, function(err) { console.error('Depenses:', err); });
 
-    unsubPaiements = ref.collection('paiements').onSnapshot(snapshot => {
+    unsubPaiements = ref.collection('paiements').onSnapshot(function(snapshot) {
         App.paiements = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
             delete data.updatedAt;
             App.paiements.push(data);
         });
-        App.paiements.sort((a, b) => b.mois.localeCompare(a.mois));
+        App.paiements.sort(function(a, b) { return b.mois.localeCompare(a.mois); });
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }, err => console.error('Paiements sync:', err));
+    }, function(err) { console.error('Paiements:', err); });
 
-    unsubSettings = ref.collection('data').doc('settings').onSnapshot(doc => {
-    if (doc.exists) {
-        const data = doc.data();
-        if (data.tauxHoraire !== undefined) App.settings.tauxHoraire = data.tauxHoraire;
-        if (data.devise !== undefined) App.settings.devise = data.devise;
-        if (data.arrondi !== undefined) App.settings.arrondi = data.arrondi;
+    unsubExtras = ref.collection('extras').onSnapshot(function(snapshot) {
+        App.extras = [];
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
+            delete data.updatedAt;
+            App.extras.push(data);
+        });
+        App.extras.sort(function(a, b) { return b.date.localeCompare(a.date); });
         saveLocalData();
         if (typeof renderAll === 'function') renderAll();
-    }
-}, err => console.error('Settings sync:', err));
+    }, function(err) { console.error('Extras:', err); });
+
+    unsubSettings = ref.collection('data').doc('settings').onSnapshot(function(doc) {
+        if (doc.exists) {
+            var data = doc.data();
+            if (data.tauxHoraire !== undefined) App.settings.tauxHoraire = data.tauxHoraire;
+            if (data.devise !== undefined) App.settings.devise = data.devise;
+            if (data.arrondi !== undefined) App.settings.arrondi = data.arrondi;
+            if (data.theme !== undefined) {
+                App.settings.theme = data.theme;
+                if (typeof applyTheme === 'function') applyTheme(data.theme);
+            }
+            saveLocalData();
+            if (typeof renderAll === 'function') renderAll();
+        }
+    }, function(err) { console.error('Settings:', err); });
 }
 
-async function cloudAddHoraire(horaire) {
+async function cloudAddHoraire(h) {
     if (!currentUser || isGuestMode) return;
     try {
-        const ref = db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(horaire.id));
-        await ref.set({ ...horaire, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        var ref = db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(h.id));
+        await ref.set(Object.assign({}, h, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
     } catch (e) { console.error('Cloud add horaire:', e); }
 }
 
 async function cloudDeleteHoraire(id) {
     if (!currentUser || isGuestMode) return;
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(id)).delete();
-    } catch (e) { console.error('Cloud delete horaire:', e); }
+    try { await db.collection('users').doc(currentUser.uid).collection('horaires').doc(String(id)).delete(); }
+    catch (e) { console.error('Cloud delete horaire:', e); }
 }
 
-async function cloudAddDepense(depense) {
+async function cloudAddDepense(d) {
     if (!currentUser || isGuestMode) return;
     try {
-        const ref = db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(depense.id));
-        await ref.set({ ...depense, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        var ref = db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(d.id));
+        await ref.set(Object.assign({}, d, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
     } catch (e) { console.error('Cloud add depense:', e); }
 }
 
 async function cloudDeleteDepense(id) {
     if (!currentUser || isGuestMode) return;
-    try {
-        await db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(id)).delete();
-    } catch (e) { console.error('Cloud delete depense:', e); }
+    try { await db.collection('users').doc(currentUser.uid).collection('depenses').doc(String(id)).delete(); }
+    catch (e) { console.error('Cloud delete depense:', e); }
 }
 
-async function cloudAddPaiement(paiement) {
+async function cloudAddPaiement(p) {
     if (!currentUser || isGuestMode) return;
     try {
-        const ref = db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(paiement.id));
-        await ref.set({ ...paiement, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        var ref = db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(p.id));
+        await ref.set(Object.assign({}, p, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
     } catch (e) { console.error('Cloud add paiement:', e); }
 }
 
 async function cloudDeletePaiement(id) {
     if (!currentUser || isGuestMode) return;
+    try { await db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(id)).delete(); }
+    catch (e) { console.error('Cloud delete paiement:', e); }
+}
+
+async function cloudAddExtra(e) {
+    if (!currentUser || isGuestMode) return;
     try {
-        await db.collection('users').doc(currentUser.uid).collection('paiements').doc(String(id)).delete();
-    } catch (e) { console.error('Cloud delete paiement:', e); }
+        var ref = db.collection('users').doc(currentUser.uid).collection('extras').doc(String(e.id));
+        await ref.set(Object.assign({}, e, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+    } catch (er) { console.error('Cloud add extra:', er); }
+}
+
+async function cloudDeleteExtra(id) {
+    if (!currentUser || isGuestMode) return;
+    try { await db.collection('users').doc(currentUser.uid).collection('extras').doc(String(id)).delete(); }
+    catch (e) { console.error('Cloud delete extra:', e); }
 }
 
 async function cloudSaveSettings() {
@@ -260,6 +282,7 @@ async function cloudSaveSettings() {
             tauxHoraire: App.settings.tauxHoraire,
             devise: App.settings.devise,
             arrondi: App.settings.arrondi || 'none',
+            theme: App.settings.theme || 'purple',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     } catch (e) { console.error('Cloud save settings:', e); }
@@ -268,23 +291,24 @@ async function cloudSaveSettings() {
 async function cloudDeleteAll() {
     if (!currentUser || isGuestMode) return;
     try {
-        const uid = currentUser.uid;
-        const ref = db.collection('users').doc(uid);
-
-        const horaires = await ref.collection('horaires').get();
-        const batch1 = db.batch();
-        horaires.forEach(doc => batch1.delete(doc.ref));
+        var uid = currentUser.uid;
+        var ref = db.collection('users').doc(uid);
+        var horaires = await ref.collection('horaires').get();
+        var batch1 = db.batch();
+        horaires.forEach(function(doc) { batch1.delete(doc.ref); });
         await batch1.commit();
-
-        const depenses = await ref.collection('depenses').get();
-        const batch2 = db.batch();
-        depenses.forEach(doc => batch2.delete(doc.ref));
+        var depenses = await ref.collection('depenses').get();
+        var batch2 = db.batch();
+        depenses.forEach(function(doc) { batch2.delete(doc.ref); });
         await batch2.commit();
-
-        const paiements = await ref.collection('paiements').get();
-        const batch3 = db.batch();
-        paiements.forEach(doc => batch3.delete(doc.ref));
+        var paiements = await ref.collection('paiements').get();
+        var batch3 = db.batch();
+        paiements.forEach(function(doc) { batch3.delete(doc.ref); });
         await batch3.commit();
+        var extras = await ref.collection('extras').get();
+        var batch4 = db.batch();
+        extras.forEach(function(doc) { batch4.delete(doc.ref); });
+        await batch4.commit();
     } catch (e) { console.error('Cloud delete all:', e); }
 }
 
@@ -292,5 +316,6 @@ function saveLocalData() {
     localStorage.setItem('mb_horaires', JSON.stringify(App.horaires));
     localStorage.setItem('mb_depenses', JSON.stringify(App.depenses));
     localStorage.setItem('mb_paiements', JSON.stringify(App.paiements || []));
+    localStorage.setItem('mb_extras', JSON.stringify(App.extras || []));
     localStorage.setItem('mb_settings', JSON.stringify(App.settings));
 }
