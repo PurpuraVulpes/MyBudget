@@ -250,21 +250,155 @@
                 </div>
             </section>
 
-<!-- TAB: PAIEMENTS -->
+<!-- TAB: PAIEMENTS (Revenus) -->
 <section class="tab-section" id="tab-paiements">
     <div class="section-title">
-        <h2>💰 Mes Paiements</h2>
-        <button class="pill-btn" id="btnToggleFormP">+ Ajouter</button>
+        <h2>💰 Mes Revenus</h2>
     </div>
 
-    <!-- Info banner -->
-    <div class="info-banner">
-        <span class="info-icon">💡</span>
-        <div>
-            <strong>Salaire décalé</strong>
-            <small>Les heures faites ce mois-ci seront payées le mois suivant</small>
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="salaire" onclick="switchSubTab('salaire')">
+            💼 Salaires
+        </button>
+        <button class="sub-tab" data-subtab="extra" onclick="switchSubTab('extra')">
+            🎁 Autres
+        </button>
+    </div>
+
+    <!-- ===== SUB-TAB: SALAIRE ===== -->
+    <div class="sub-tab-content active" id="subtab-salaire">
+        <div class="section-title" style="margin-top:6px">
+            <h3 style="font-size:1rem">💼 Salaires reçus</h3>
+            <button class="pill-btn" id="btnToggleFormP">+ Ajouter</button>
+        </div>
+
+        <div class="info-banner">
+            <span class="info-icon">💡</span>
+            <div>
+                <strong>Salaire décalé</strong>
+                <small>Les heures faites ce mois-ci seront payées le mois suivant</small>
+            </div>
+        </div>
+
+        <div class="prevision-card" id="previsionCard">
+            <div class="prevision-header">
+                <span class="prevision-icon">🔮</span>
+                <div>
+                    <strong>Prévision de paie</strong>
+                    <small id="previsionSub">Basé sur vos heures</small>
+                </div>
+            </div>
+            <div class="prevision-row">
+                <div class="prevision-item">
+                    <span>Ce mois-ci</span>
+                    <strong id="previsionActuel">0,00 €</strong>
+                    <small id="previsionActuelSub">Sera reçu le mois prochain</small>
+                </div>
+                <div class="prevision-sep"></div>
+                <div class="prevision-item">
+                    <span>Mois précédent</span>
+                    <strong id="previsionPrecedent">0,00 €</strong>
+                    <small id="previsionPrecedentSub">À recevoir ce mois</small>
+                </div>
+            </div>
+            <button class="submit-btn purple" id="btnQuickPaie">✨ Enregistrer la paie prévue</button>
+        </div>
+
+        <div class="form-card collapsed" id="formCardP">
+            <form id="formPaiement">
+                <div class="form-field">
+                    <label>📅 Mois de réception</label>
+                    <input type="month" id="moisPaiement" required>
+                </div>
+                <div class="form-field">
+                    <label>💶 Montant reçu (€)</label>
+                    <input type="number" id="montantPaiement" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" required>
+                </div>
+                <div class="form-field">
+                    <label>📝 Description</label>
+                    <input type="text" id="descriptionPaiement" placeholder="Ex: Salaire janvier, Prime...">
+                </div>
+                <button type="submit" class="submit-btn green">✅ Enregistrer</button>
+            </form>
+        </div>
+
+        <div class="month-filter">
+            <button class="arrow-btn" id="prevYearP">‹</button>
+            <input type="number" id="filtreAnneeP" class="month-input" min="2020" max="2099">
+            <button class="arrow-btn" id="nextYearP">›</button>
+        </div>
+
+        <div class="quick-stats">
+            <div class="qs-item"><span id="qsNbPaie">0</span><small>Paiements</small></div>
+            <div class="qs-item"><span id="qsTotalPaie">0 €</span><small>Total année</small></div>
+            <div class="qs-item"><span id="qsMoyPaie">0 €</span><small>Moyenne</small></div>
+        </div>
+
+        <div class="list-wrapper" id="listePaiements">
+            <p class="empty-state">💸 Aucun paiement enregistré.</p>
         </div>
     </div>
+
+    <!-- ===== SUB-TAB: EXTRA REVENUS ===== -->
+    <div class="sub-tab-content" id="subtab-extra">
+        <div class="section-title" style="margin-top:6px">
+            <h3 style="font-size:1rem">🎁 Revenus supplémentaires</h3>
+            <button class="pill-btn" id="btnToggleFormE">+ Ajouter</button>
+        </div>
+
+        <div class="info-banner">
+            <span class="info-icon">💡</span>
+            <div>
+                <strong>Autres sources de revenus</strong>
+                <small>Cadeaux, remboursements, ventes, aides...</small>
+            </div>
+        </div>
+
+        <div class="form-card collapsed" id="formCardE">
+            <form id="formExtra">
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label>📅 Date</label>
+                        <input type="date" id="dateExtra" required>
+                    </div>
+                    <div class="form-field">
+                        <label>💶 Montant (€)</label>
+                        <input type="number" id="montantExtra" step="0.01" min="0.01" placeholder="0,00" inputmode="decimal" required>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>🏷️ Source</label>
+                    <div class="cat-grid" id="extraGrid"></div>
+                    <input type="hidden" id="sourceExtra" required>
+                </div>
+                <div class="form-field">
+                    <label>📝 Description</label>
+                    <input type="text" id="descriptionExtra" placeholder="Ex: Cadeau anniversaire de maman">
+                </div>
+                <button type="submit" class="submit-btn green">✅ Enregistrer</button>
+            </form>
+        </div>
+
+        <div class="month-filter">
+            <button class="arrow-btn" id="prevE">‹</button>
+            <input type="month" id="filtreExtraMois" class="month-input">
+            <button class="arrow-btn" id="nextE">›</button>
+        </div>
+
+        <div class="quick-stats">
+            <div class="qs-item"><span id="qsNbE">0</span><small>Entrées</small></div>
+            <div class="qs-item"><span id="qsTotalE">0 €</span><small>Total mois</small></div>
+            <div class="qs-item"><span id="qsMoyE">0 €</span><small>Moyenne</small></div>
+        </div>
+
+        <div class="source-summary" id="sourceSummary"></div>
+
+        <div class="list-wrapper" id="listeExtras">
+            <p class="empty-state">🎁 Aucun revenu supplémentaire ce mois.</p>
+        </div>
+    </div>
+</section>
 
     <!-- Prévision du mois -->
     <div class="prevision-card" id="previsionCard">
@@ -522,7 +656,7 @@
       <!-- Bottom Nav -->
 <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="horaires"><span class="nav-icon">⏰</span><span class="nav-label">Horaires</span></button>
-    <button class="nav-btn" data-tab="paiements"><span class="nav-icon">💰</span><span class="nav-label">Paie</span></button>
+    <button class="nav-btn" data-tab="paiements"><span class="nav-icon">💰</span><span class="nav-label">Revenus</span></button>
     <button class="nav-btn" data-tab="depenses"><span class="nav-icon">💳</span><span class="nav-label">Dépenses</span></button>
     <button class="nav-btn" data-tab="resume"><span class="nav-icon">📈</span><span class="nav-label">Résumé</span></button>
     <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
