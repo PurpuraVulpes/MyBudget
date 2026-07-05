@@ -841,7 +841,7 @@ function renderDashboard() {
     var sol = R.totalReel - dep;
     var jrs = new Set(h.map(function(x) { return x.date; })).size;
 
-    document.getElementById('totalRevenus').textContent = formatM(rev);
+        document.getElementById('totalRevenus').textContent = formatM(rev);
     document.getElementById('totalDepenses').textContent = formatM(dep);
     document.getElementById('totalHeures').textContent = formatDuree(mins);
     document.getElementById('totalJours').textContent = jrs;
