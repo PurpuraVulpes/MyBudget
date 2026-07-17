@@ -1,22 +1,17 @@
 'use strict';
 
 // ============================================================
-// 🔥 FIREBASE CONFIGURATION - REMPLACEZ PAR VOS VALEURS
+// 🔥 FIREBASE CONFIG - REMPLACEZ PAR VOS VALEURS
 // ============================================================
-
 const firebaseConfig = {
-    apiKey: "AIzaSyDK7eRyDOCgITy_rMiTu-kOvWlPWuwze7E",
-    authDomain: "budget-5372e.firebaseapp.com",
-    projectId: "budget-5372e",
-    storageBucket: "budget-5372e.firebasestorage.app",
-    messagingSenderId: "871085643686",
-    appId: "1:871085643686:web:9a4dd73501ddb6657b2167"
+    apiKey: "VOTRE_API_KEY_ICI",
+    authDomain: "VOTRE_PROJET.firebaseapp.com",
+    projectId: "VOTRE_PROJET",
+    storageBucket: "VOTRE_PROJET.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abc123"
 };
-
 // ============================================================
-
-
-
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -34,6 +29,7 @@ let unsubPaiements = null;
 let unsubExtras = null;
 let unsubEpargne = null;
 let unsubShopping = null;
+let unsubObjectifs = null;
 let unsubSettings = null;
 
 auth.onAuthStateChanged(function(user) {
@@ -62,6 +58,7 @@ async function logout() {
     if (unsubExtras) { unsubExtras(); unsubExtras = null; }
     if (unsubEpargne) { unsubEpargne(); unsubEpargne = null; }
     if (unsubShopping) { unsubShopping(); unsubShopping = null; }
+    if (unsubObjectifs) { unsubObjectifs(); unsubObjectifs = null; }
     if (unsubSettings) { unsubSettings(); unsubSettings = null; }
     await auth.signOut();
     currentUser = null;
@@ -167,6 +164,14 @@ async function uploadLocalDataIfNeeded(uid) {
                 });
                 await batch6.commit();
             }
+            if (App.objectifs && App.objectifs.length > 0) {
+                var batch7 = db.batch();
+                App.objectifs.forEach(function(o) {
+                    var docRef = ref.collection('objectifs').doc(String(o.id));
+                    batch7.set(docRef, Object.assign({}, o, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+                });
+                await batch7.commit();
+            }
             showToast('☁️ Données synchronisées !');
         }
         localStorage.setItem('mb_uploaded_' + uid, '1');
@@ -176,6 +181,7 @@ async function uploadLocalDataIfNeeded(uid) {
 
 function startRealtimeSync(uid) {
     var ref = db.collection('users').doc(uid);
+
     unsubHoraires = ref.collection('horaires').onSnapshot(function(snapshot) {
         App.horaires = [];
         snapshot.forEach(function(doc) {
@@ -247,6 +253,17 @@ function startRealtimeSync(uid) {
         saveLocalData();
         if (typeof renderShopping === 'function') renderShopping();
     }, function(err) { console.error('Shopping:', err); });
+
+    unsubObjectifs = ref.collection('objectifs').onSnapshot(function(snapshot) {
+        App.objectifs = [];
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
+            delete data.updatedAt;
+            App.objectifs.push(data);
+        });
+        saveLocalData();
+        if (typeof renderObjectifs === 'function') renderObjectifs();
+    }, function(err) { console.error('Objectifs:', err); });
 
     unsubSettings = ref.collection('data').doc('settings').onSnapshot(function(doc) {
         if (doc.exists) {
@@ -348,6 +365,20 @@ async function cloudDeleteShopItem(id) {
     catch (e) { console.error('Cloud delete shop:', e); }
 }
 
+async function cloudAddObjectif(o) {
+    if (!currentUser || isGuestMode) return;
+    try {
+        var ref = db.collection('users').doc(currentUser.uid).collection('objectifs').doc(String(o.id));
+        await ref.set(Object.assign({}, o, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+    } catch (e) { console.error('Cloud add objectif:', e); }
+}
+
+async function cloudDeleteObjectif(id) {
+    if (!currentUser || isGuestMode) return;
+    try { await db.collection('users').doc(currentUser.uid).collection('objectifs').doc(String(id)).delete(); }
+    catch (e) { console.error('Cloud delete objectif:', e); }
+}
+
 async function cloudSaveSettings() {
     if (!currentUser || isGuestMode) return;
     try {
@@ -390,6 +421,10 @@ async function cloudDeleteAll() {
         var batch6 = db.batch();
         shopping.forEach(function(doc) { batch6.delete(doc.ref); });
         await batch6.commit();
+        var objectifs = await ref.collection('objectifs').get();
+        var batch7 = db.batch();
+        objectifs.forEach(function(doc) { batch7.delete(doc.ref); });
+        await batch7.commit();
     } catch (e) { console.error('Cloud delete all:', e); }
 }
 
@@ -400,5 +435,6 @@ function saveLocalData() {
     localStorage.setItem('mb_extras', JSON.stringify(App.extras || []));
     localStorage.setItem('mb_epargne', JSON.stringify(App.epargne || []));
     localStorage.setItem('mb_shopping', JSON.stringify(App.shopping || []));
+    localStorage.setItem('mb_objectifs', JSON.stringify(App.objectifs || []));
     localStorage.setItem('mb_settings', JSON.stringify(App.settings));
 }
