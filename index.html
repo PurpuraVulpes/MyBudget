@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/modules.css">  
+    <link rel="stylesheet" href="css/modules.css">
 </head>
 <body>
 
@@ -48,7 +48,6 @@
                         <span class="sync-dot" id="syncDot"></span>
                     </div>
                     <button class="header-icon-btn" id="btnLock" title="Verrouiller" hidden>🔒</button>
-                    <button class="header-icon-btn" id="btnHeaderAction" hidden>➕</button>
                 </div>
             </div>
         </header>
@@ -59,14 +58,14 @@
             <!-- ========== PAGE : ACCUEIL ========== -->
             <section class="page" id="page-home" data-page="home">
                 <div class="page-content" id="homeContent">
-                    <!-- Rempli dynamiquement -->
+                    <!-- Rempli dynamiquement par Dashboard.render() -->
                 </div>
             </section>
 
             <!-- ========== PAGE : AJOUTER ========== -->
             <section class="page" id="page-add" data-page="add" hidden>
                 <div class="page-content">
-                    <div class="add-menu" id="addMenu">
+                    <div class="add-menu">
 
                         <button class="add-menu-item" data-add="horaire">
                             <span class="add-menu-icon">⏰</span>
@@ -131,6 +130,15 @@
                             <span class="add-menu-arrow">›</span>
                         </button>
 
+                        <button class="add-menu-item" data-add="budget">
+                            <span class="add-menu-icon">📊</span>
+                            <div class="add-menu-text">
+                                <strong>Budget catégorie</strong>
+                                <small>Limite mensuelle par catégorie</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+
                     </div>
                 </div>
             </section>
@@ -145,11 +153,7 @@
                         <button class="segment" data-segment="budgets">Budgets</button>
                     </div>
                     <div id="budgetContent">
-                        <div class="empty-page">
-                            <div class="empty-icon">💳</div>
-                            <h2>Budget</h2>
-                            <p>Bientôt disponible (Lot 3)</p>
-                        </div>
+                        <!-- Rempli dynamiquement -->
                     </div>
                 </div>
             </section>
@@ -166,7 +170,7 @@
                         <div class="empty-page">
                             <div class="empty-icon">📊</div>
                             <h2>Analyse</h2>
-                            <p>Graphiques et statistiques (Lot 4)</p>
+                            <p>Graphiques avancés arrivent dans le Lot 4</p>
                         </div>
                     </div>
                 </div>
@@ -176,7 +180,7 @@
             <section class="page" id="page-more" data-page="more" hidden>
                 <div class="page-content">
 
-                    <!-- Modules -->
+                    <!-- Modules rapides -->
                     <div class="menu-list">
                         <button class="menu-item" data-more="epargne">
                             <span class="menu-icon">🏦</span>
@@ -288,7 +292,7 @@
                         </button>
                     </div>
 
-                    <div class="app-version">MonBudget v5.0 • 🔒 Stockage local</div>
+                    <div class="app-version">MonBudget v5.0 • 🚀 Version complète</div>
 
                 </div>
             </section>
@@ -341,14 +345,29 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <!-- ============ SCRIPTS DE L'APP ============ -->
+    <!-- ============ CORE ============ -->
     <script src="js/state.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/firebase.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/pin.js"></script>
     <script src="js/router.js"></script>
-    <script src="js/app.js"></script>
+
+    <!-- ============ SERVICES ============ -->
     <script src="js/services/formHelpers.js"></script>
+
+    <!-- ============ MODULES ============ -->
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/horaires.js"></script>
+    <script src="js/modules/depenses.js"></script>
+    <script src="js/modules/revenus.js"></script>
+    <script src="js/modules/epargne.js"></script>
+    <script src="js/modules/objectifs.js"></script>
+    <script src="js/modules/shopping.js"></script>
+    <script src="js/modules/recurrent.js"></script>
+    <script src="js/modules/budgets.js"></script>
+
+    <!-- ============ MAIN ============ -->
+    <script src="js/app.js"></script>
 </body>
 </html>
