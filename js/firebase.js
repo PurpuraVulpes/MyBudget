@@ -9,13 +9,14 @@
  * Remplacez ces valeurs par VOS clés Firebase
  * Firebase Console → Paramètres du projet → Vos applications
  */
-const FIREBASE_CONFIG = {
-    apiKey: "VOTRE_API_KEY_ICI",
-    authDomain: "VOTRE_PROJET.firebaseapp.com",
-    projectId: "VOTRE_PROJET",
-    storageBucket: "VOTRE_PROJET.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abc123"
+const firebaseConfig = {
+  apiKey: "AIzaSyDK7eRyDOCgITy_rMiTu-kOvWlPWuwze7E",
+  authDomain: "budget-5372e.firebaseapp.com",
+  databaseURL: "https://budget-5372e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "budget-5372e",
+  storageBucket: "budget-5372e.firebasestorage.app",
+  messagingSenderId: "871085643686",
+  appId: "1:871085643686:web:9a4dd73501ddb6657b2167"
 };
 
 /**
