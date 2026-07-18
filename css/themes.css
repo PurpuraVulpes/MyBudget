@@ -1,1 +1,279 @@
+/* ============================================
+   THEMES.CSS - Système de thèmes
+   ============================================ */
 
+/* ===================================================
+   THÈME VIOLET (défaut)
+   =================================================== */
+:root,
+[data-theme="purple"] {
+    /* Backgrounds */
+    --bg: #0f0a1e;
+    --bg2: #150f2a;
+    --bg3: #1c1535;
+    --bg-blur: rgba(15, 10, 30, 0.85);
+
+    /* Cards */
+    --card: #211a42;
+    --card2: #2a2155;
+    --card-hover: #2d2560;
+
+    /* Borders */
+    --border: #352d65;
+    --border-light: #2a2155;
+
+    /* Text */
+    --text: #f0ecff;
+    --text2: #a99ec7;
+    --text3: #685d8a;
+
+    /* Primary (couleur principale du thème) */
+    --primary: #9b59b6;
+    --primary-dark: #7d3c98;
+    --primary-light: #c39bd3;
+    --primary-glow: rgba(155, 89, 182, 0.3);
+    --primary-glow-strong: rgba(155, 89, 182, 0.5);
+
+    /* Accent */
+    --accent: #8e44ad;
+    --accent-light: #d7bde2;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #9b59b6, #8e44ad);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(155,89,182,0.15), rgba(142,68,173,0.05));
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* ===================================================
+   THÈME SOMBRE
+   =================================================== */
+[data-theme="dark"] {
+    --bg: #0a0a0a;
+    --bg2: #121212;
+    --bg3: #1a1a1a;
+    --bg-blur: rgba(10, 10, 10, 0.85);
+
+    --card: #1e1e1e;
+    --card2: #262626;
+    --card-hover: #2e2e2e;
+
+    --border: #303030;
+    --border-light: #242424;
+
+    --text: #f0f0f0;
+    --text2: #a0a0a0;
+    --text3: #606060;
+
+    --primary: #6c7a89;
+    --primary-dark: #4a5568;
+    --primary-light: #a0aec0;
+    --primary-glow: rgba(108, 122, 137, 0.3);
+    --primary-glow-strong: rgba(108, 122, 137, 0.5);
+
+    --accent: #5a6673;
+    --accent-light: #a0aec0;
+
+    --gradient-primary: linear-gradient(135deg, #6c7a89, #4a5568);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(108,122,137,0.15), rgba(74,85,104,0.05));
+
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* ===================================================
+   THÈME CLAIR
+   =================================================== */
+[data-theme="light"] {
+    --bg: #f5f7fa;
+    --bg2: #ffffff;
+    --bg3: #eef2f7;
+    --bg-blur: rgba(245, 247, 250, 0.9);
+
+    --card: #ffffff;
+    --card2: #f0f4f8;
+    --card-hover: #e8eef5;
+
+    --border: #dce3ec;
+    --border-light: #e8eef5;
+
+    --text: #1a202c;
+    --text2: #4a5568;
+    --text3: #a0aec0;
+
+    --primary: #667eea;
+    --primary-dark: #5568d3;
+    --primary-light: #8fa3f5;
+    --primary-glow: rgba(102, 126, 234, 0.2);
+    --primary-glow-strong: rgba(102, 126, 234, 0.35);
+
+    --accent: #5568d3;
+    --accent-light: #8fa3f5;
+
+    --gradient-primary: linear-gradient(135deg, #667eea, #5568d3);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(85,104,211,0.03));
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* Ajustements spécifiques au thème clair */
+[data-theme="light"] .app-header,
+[data-theme="light"] .bottom-nav {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .list-item {
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===================================================
+   THÈME BLEU
+   =================================================== */
+[data-theme="blue"] {
+    --bg: #0a1628;
+    --bg2: #0f1e35;
+    --bg3: #142640;
+    --bg-blur: rgba(10, 22, 40, 0.85);
+
+    --card: #1a2f4d;
+    --card2: #22395a;
+    --card-hover: #2a4468;
+
+    --border: #2d4a6e;
+    --border-light: #22395a;
+
+    --text: #ecf5ff;
+    --text2: #9bb5d1;
+    --text3: #5a7590;
+
+    --primary: #3498db;
+    --primary-dark: #2874a6;
+    --primary-light: #85c1e9;
+    --primary-glow: rgba(52, 152, 219, 0.3);
+    --primary-glow-strong: rgba(52, 152, 219, 0.5);
+
+    --accent: #2980b9;
+    --accent-light: #85c1e9;
+
+    --gradient-primary: linear-gradient(135deg, #3498db, #2874a6);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(52,152,219,0.15), rgba(40,116,166,0.05));
+
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* ===================================================
+   THÈME ROUGE
+   =================================================== */
+[data-theme="red"] {
+    --bg: #1a0a0e;
+    --bg2: #251015;
+    --bg3: #33181e;
+    --bg-blur: rgba(26, 10, 14, 0.85);
+
+    --card: #3d1e26;
+    --card2: #4a2632;
+    --card-hover: #572f3d;
+
+    --border: #5e2f3e;
+    --border-light: #4a2632;
+
+    --text: #fff0ec;
+    --text2: #d19b95;
+    --text3: #8a5f5a;
+
+    --primary: #e74c3c;
+    --primary-dark: #c0392b;
+    --primary-light: #f1948a;
+    --primary-glow: rgba(231, 76, 60, 0.3);
+    --primary-glow-strong: rgba(231, 76, 60, 0.5);
+
+    --accent: #c0392b;
+    --accent-light: #f1948a;
+
+    --gradient-primary: linear-gradient(135deg, #e74c3c, #c0392b);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(231,76,60,0.15), rgba(192,57,43,0.05));
+
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* ===================================================
+   THÈME VERT
+   =================================================== */
+[data-theme="green"] {
+    --bg: #0a1a12;
+    --bg2: #0f2419;
+    --bg3: #143020;
+    --bg-blur: rgba(10, 26, 18, 0.85);
+
+    --card: #1a3d29;
+    --card2: #224a33;
+    --card-hover: #2a5840;
+
+    --border: #2d5e42;
+    --border-light: #224a33;
+
+    --text: #ecfff2;
+    --text2: #95d1a8;
+    --text3: #5a8a68;
+
+    --primary: #27ae60;
+    --primary-dark: #1e8449;
+    --primary-light: #7dcea0;
+    --primary-glow: rgba(39, 174, 96, 0.3);
+    --primary-glow-strong: rgba(39, 174, 96, 0.5);
+
+    --accent: #1e8449;
+    --accent-light: #7dcea0;
+
+    --gradient-primary: linear-gradient(135deg, #27ae60, #1e8449);
+    --gradient-primary-soft: linear-gradient(135deg, rgba(39,174,96,0.15), rgba(30,132,73,0.05));
+
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-primary: 0 4px 20px var(--primary-glow);
+}
+
+/* ===================================================
+   BADGES SÉMANTIQUES (indépendants du thème)
+   =================================================== */
+.badge-success {
+    background: var(--success-glow);
+    color: var(--success);
+}
+
+.badge-danger {
+    background: var(--danger-glow);
+    color: var(--danger);
+}
+
+.badge-warning {
+    background: var(--warning-glow);
+    color: var(--warning);
+}
+
+.badge-info {
+    background: var(--info-glow);
+    color: var(--info);
+}
+
+.badge-primary {
+    background: var(--primary-glow);
+    color: var(--primary-light);
+}
