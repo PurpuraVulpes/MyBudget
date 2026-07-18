@@ -1,1 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MonBudget">
+    <meta name="theme-color" content="#0f0a1e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
 
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <title>💰 MonBudget</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+    <!-- ============ SPLASH SCREEN ============ -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo">💰</div>
+        <div class="splash-title">MonBudget</div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <!-- ============ MAIN APP ============ -->
+    <div class="app" id="app" hidden>
+
+        <!-- Header -->
+        <header class="app-header" id="appHeader">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="header-title" id="pageTitle">Accueil</h1>
+                    <p class="header-subtitle" id="pageSubtitle"></p>
+                </div>
+                <div class="header-right">
+                    <button class="header-icon-btn" id="btnHeaderAction" hidden>➕</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main scrollable content -->
+        <main class="app-main" id="appMain">
+
+            <!-- Page: Accueil -->
+            <section class="page" id="page-home" data-page="home">
+                <div class="page-content">
+                    <div class="empty-page">
+                        <div class="empty-icon">🏠</div>
+                        <h2>Accueil</h2>
+                        <p>Le dashboard sera ici (Lot 3)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Ajouter -->
+            <section class="page" id="page-add" data-page="add" hidden>
+                <div class="page-content">
+                    <div class="add-menu">
+                        <button class="add-menu-item" data-add="horaire">
+                            <span class="add-menu-icon">⏰</span>
+                            <div class="add-menu-text">
+                                <strong>Horaire</strong>
+                                <small>Enregistrer une session de travail</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="depense">
+                            <span class="add-menu-icon">💳</span>
+                            <div class="add-menu-text">
+                                <strong>Dépense</strong>
+                                <small>Ajouter une dépense</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="revenu">
+                            <span class="add-menu-icon">💰</span>
+                            <div class="add-menu-text">
+                                <strong>Revenu</strong>
+                                <small>Salaire, cadeau, remboursement...</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="epargne">
+                            <span class="add-menu-icon">🏦</span>
+                            <div class="add-menu-text">
+                                <strong>Épargne</strong>
+                                <small>Déposer ou retirer</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="objectif">
+                            <span class="add-menu-icon">🎯</span>
+                            <div class="add-menu-text">
+                                <strong>Objectif</strong>
+                                <small>Nouvel objectif d'épargne</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="shopping">
+                            <span class="add-menu-icon">🛒</span>
+                            <div class="add-menu-text">
+                                <strong>Achat à prévoir</strong>
+                                <small>Liste d'envies</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                        <button class="add-menu-item" data-add="recurrent">
+                            <span class="add-menu-icon">🔁</span>
+                            <div class="add-menu-text">
+                                <strong>Dépense récurrente</strong>
+                                <small>Loyer, abonnements...</small>
+                            </div>
+                            <span class="add-menu-arrow">›</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Budget -->
+            <section class="page" id="page-budget" data-page="budget" hidden>
+                <div class="page-content">
+                    <div class="segment-control">
+                        <button class="segment active" data-segment="depenses">Dépenses</button>
+                        <button class="segment" data-segment="shopping">À acheter</button>
+                        <button class="segment" data-segment="recurrent">Récurrentes</button>
+                        <button class="segment" data-segment="budgets">Budgets</button>
+                    </div>
+                    <div class="empty-page">
+                        <div class="empty-icon">💳</div>
+                        <h2>Budget</h2>
+                        <p>Bientôt disponible (Lot 3)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Analyse -->
+            <section class="page" id="page-analyse" data-page="analyse" hidden>
+                <div class="page-content">
+                    <div class="empty-page">
+                        <div class="empty-icon">📊</div>
+                        <h2>Analyse</h2>
+                        <p>Graphiques et statistiques (Lot 4)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Plus -->
+            <section class="page" id="page-more" data-page="more" hidden>
+                <div class="page-content">
+                    <div class="menu-list">
+                        <button class="menu-item" data-more="epargne">
+                            <span class="menu-icon">🏦</span>
+                            <span class="menu-label">Épargne</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="objectifs">
+                            <span class="menu-icon">🎯</span>
+                            <span class="menu-label">Objectifs</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="horaires">
+                            <span class="menu-icon">⏰</span>
+                            <span class="menu-label">Historique horaires</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="calendrier">
+                            <span class="menu-icon">📅</span>
+                            <span class="menu-label">Calendrier</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <div class="menu-section-title">Compte</div>
+                    <div class="menu-list">
+                        <button class="menu-item" data-more="account">
+                            <span class="menu-icon">👤</span>
+                            <span class="menu-label" id="menuAccountLabel">Mode local</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <div class="menu-section-title">Personnalisation</div>
+                    <div class="menu-list">
+                        <button class="menu-item" data-more="theme">
+                            <span class="menu-icon">🎨</span>
+                            <span class="menu-label">Thème</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="modules">
+                            <span class="menu-icon">🧩</span>
+                            <span class="menu-label">Modules actifs</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="pin">
+                            <span class="menu-icon">🔒</span>
+                            <span class="menu-label">Code PIN</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <div class="menu-section-title">Données</div>
+                    <div class="menu-list">
+                        <button class="menu-item" data-more="export">
+                            <span class="menu-icon">📤</span>
+                            <span class="menu-label">Exporter</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item" data-more="import">
+                            <span class="menu-icon">📥</span>
+                            <span class="menu-label">Importer</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                        <button class="menu-item danger" data-more="reset">
+                            <span class="menu-icon">🗑️</span>
+                            <span class="menu-label">Tout effacer</span>
+                            <span class="menu-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <div class="app-version">MonBudget v5.0</div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="nav-tab active" data-nav="home">
+                <span class="nav-tab-icon">🏠</span>
+                <span class="nav-tab-label">Accueil</span>
+            </button>
+            <button class="nav-tab" data-nav="add">
+                <span class="nav-tab-icon add-icon">➕</span>
+                <span class="nav-tab-label">Ajouter</span>
+            </button>
+            <button class="nav-tab" data-nav="budget">
+                <span class="nav-tab-icon">💳</span>
+                <span class="nav-tab-label">Budget</span>
+            </button>
+            <button class="nav-tab" data-nav="analyse">
+                <span class="nav-tab-icon">📊</span>
+                <span class="nav-tab-label">Analyse</span>
+            </button>
+            <button class="nav-tab" data-nav="more">
+                <span class="nav-tab-icon">⚙️</span>
+                <span class="nav-tab-label">Plus</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- ============ SHEETS (Modals du bas) ============ -->
+    <div class="sheet-overlay" id="sheetOverlay" hidden>
+        <div class="sheet" id="sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-header">
+                <h3 class="sheet-title" id="sheetTitle">Titre</h3>
+                <button class="sheet-close" id="sheetClose">✕</button>
+            </div>
+            <div class="sheet-content" id="sheetContent"></div>
+        </div>
+    </div>
+
+    <!-- ============ TOAST ============ -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ============ SCRIPTS ============ -->
+    <script src="js/state.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
