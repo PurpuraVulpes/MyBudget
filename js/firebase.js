@@ -9,7 +9,7 @@
  * Remplacez ces valeurs par VOS clés Firebase
  * Firebase Console → Paramètres du projet → Vos applications
  */
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDK7eRyDOCgITy_rMiTu-kOvWlPWuwze7E",
   authDomain: "budget-5372e.firebaseapp.com",
   databaseURL: "https://budget-5372e-default-rtdb.europe-west1.firebasedatabase.app",
