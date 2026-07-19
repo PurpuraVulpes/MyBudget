@@ -62,7 +62,7 @@ const App = {
         }
     },
 
-    async decideStartScreen(firebaseAvailable) {
+        async decideStartScreen(firebaseAvailable) {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         if (firebaseAvailable && FirebaseService.auth && FirebaseService.auth.currentUser) {
