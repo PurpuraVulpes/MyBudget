@@ -32,7 +32,7 @@ const FirebaseService = {
     /**
      * Initialise Firebase
      */
-    init() {
+       init() {
         try {
             // Vérifier que Firebase est chargé
             if (typeof firebase === 'undefined') {
@@ -53,7 +53,12 @@ const FirebaseService = {
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            // Activer la persistance offline
+            // ✅ IMPORTANT : Persistance de la session (rester connecté)
+            this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => console.log('✅ Session persistante activée'))
+                .catch(err => console.warn('⚠️ Persistance session:', err));
+
+            // Activer la persistance offline pour Firestore
             this.db.enablePersistence({ synchronizeTabs: true })
                 .catch(err => console.warn('Firestore persistence:', err.code));
 
