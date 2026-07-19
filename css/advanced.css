@@ -1,0 +1,568 @@
+/* ============================================
+   ADVANCED.CSS - Styles fonctionnalités avancées
+   ============================================ */
+
+/* ===================================================
+   NOTIFICATIONS PWA
+   =================================================== */
+.notif-request-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(135deg, var(--primary-glow), var(--primary-glow-strong));
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+    animation: slideUp var(--transition-slow);
+}
+
+.notif-request-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.notif-request-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-request-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.notif-request-text {
+    font-size: var(--text-xs);
+    color: var(--text2);
+    line-height: 1.4;
+}
+
+.notif-request-actions {
+    display: flex;
+    gap: var(--space-xs);
+    flex-shrink: 0;
+    flex-direction: column;
+}
+
+/* Liste des notifications planifiées */
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.notif-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+}
+
+.notif-item-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notif-item-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-item-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.notif-item-desc {
+    font-size: var(--text-xs);
+    color: var(--text2);
+    margin-top: 2px;
+}
+
+/* ===================================================
+   MULTI-DEVISES
+   =================================================== */
+.devise-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.devise-option {
+    padding: var(--space-md) var(--space-sm);
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all var(--transition-fast);
+}
+
+.devise-option:active {
+    transform: scale(0.95);
+}
+
+.devise-option.active {
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.devise-symbol {
+    font-size: 1.5rem;
+    font-weight: var(--font-extrabold);
+    color: var(--text);
+    line-height: 1;
+}
+
+.devise-name {
+    font-size: 0.65rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.devise-rate-info {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+    font-size: var(--text-xs);
+    color: var(--text2);
+    text-align: center;
+}
+
+.devise-rate-info strong {
+    color: var(--primary-light);
+    font-weight: var(--font-bold);
+}
+
+/* Conversion en ligne */
+.conversion-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    color: var(--text3);
+    margin-left: var(--space-xs);
+}
+
+.conversion-line strong {
+    color: var(--text2);
+    font-weight: var(--font-semibold);
+}
+
+/* ===================================================
+   TAGS PERSONNALISÉS
+   =================================================== */
+.tags-input-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    min-height: 44px;
+    align-items: center;
+    cursor: text;
+}
+
+.tags-input-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--primary-glow);
+    color: var(--primary-light);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    animation: scaleIn var(--transition-fast);
+}
+
+.tag-chip-remove {
+    background: none;
+    border: none;
+    color: var(--primary-light);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 2px;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.tag-chip-remove:hover,
+.tag-chip-remove:active {
+    opacity: 1;
+    color: var(--danger);
+}
+
+.tags-input {
+    flex: 1;
+    min-width: 100px;
+    border: none !important;
+    background: transparent !important;
+    padding: 4px 8px !important;
+    font-size: var(--text-sm) !important;
+    color: var(--text) !important;
+}
+
+.tags-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--space-sm);
+}
+
+.tag-suggestion {
+    padding: 4px 10px;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tag-suggestion:hover,
+.tag-suggestion:active {
+    background: var(--primary-glow);
+    color: var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* Filtre par tags */
+.tag-filter {
+    display: flex;
+    gap: var(--space-xs);
+    padding: var(--space-sm) 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tag-filter-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.tag-filter-item.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* ===================================================
+   PHOTOS DE TICKETS
+   =================================================== */
+.ticket-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    background: var(--bg3);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.ticket-upload:hover,
+.ticket-upload:active {
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.ticket-upload.has-photo {
+    padding: var(--space-sm);
+    border-style: solid;
+    border-color: var(--primary);
+}
+
+.ticket-upload-icon {
+    font-size: 2.5rem;
+    opacity: 0.6;
+}
+
+.ticket-upload-text {
+    font-size: var(--text-sm);
+    color: var(--text2);
+    line-height: 1.4;
+}
+
+.ticket-upload-text strong {
+    color: var(--primary-light);
+    font-weight: var(--font-semibold);
+}
+
+.ticket-preview {
+    position: relative;
+    width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+}
+
+.ticket-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.ticket-preview-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+}
+
+.ticket-action-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(8px);
+}
+
+.ticket-action-btn:active {
+    transform: scale(0.9);
+}
+
+.ticket-action-btn.danger {
+    background: rgba(255, 107, 107, 0.8);
+}
+
+/* Miniature dans la liste */
+.ticket-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.ticket-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ticket-thumb-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: var(--radius-full);
+    font-weight: var(--font-bold);
+    border: 2px solid var(--card);
+}
+
+/* Modal viewer */
+.ticket-viewer {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    min-height: 60vh;
+}
+
+.ticket-viewer img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+}
+
+/* ===================================================
+   RÉCURRENTES - CHECK MODAL
+   =================================================== */
+.recurrent-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.recurrent-check-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.recurrent-check-item.checked {
+    background: var(--success-glow);
+    border-color: var(--success);
+}
+
+.recurrent-check-checkbox {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.recurrent-check-item.checked .recurrent-check-checkbox {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.recurrent-check-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.recurrent-check-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.recurrent-check-info {
+    font-size: var(--text-xs);
+    color: var(--text2);
+    margin-top: 2px;
+}
+
+.recurrent-check-amount {
+    font-size: var(--text-md);
+    font-weight: var(--font-bold);
+    color: var(--danger);
+    flex-shrink: 0;
+}
+
+/* ===================================================
+   EXPORT/IMPORT AVANCÉ
+   =================================================== */
+.export-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.export-option {
+    padding: var(--space-lg);
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    text-align: center;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.export-option:active {
+    transform: scale(0.95);
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.export-option-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.export-option-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--text);
+}
+
+.export-option-desc {
+    font-size: var(--text-xs);
+    color: var(--text2);
+    line-height: 1.3;
+}
+
+/* ===================================================
+   BADGES DEVISE
+   =================================================== */
+.currency-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: var(--bg3);
+    color: var(--text3);
+    border-radius: var(--radius-full);
+    font-weight: var(--font-semibold);
+    margin-left: 4px;
+}
+
+/* ===================================================
+   RESPONSIVE
+   =================================================== */
+@media (max-width: 380px) {
+    .devise-selector {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .export-options {
+        grid-template-columns: 1fr;
+    }
+}
