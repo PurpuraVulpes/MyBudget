@@ -1,5 +1,5 @@
 /* ============================================
-   APP.JS - Point d'entrée principal v5 FINAL (Lot 5)
+   APP.JS - Point d'entrée principal v5 FINAL (Lot 5 + Fix session)
    ============================================ */
 
 'use strict';
@@ -15,7 +15,7 @@ const App = {
      * ==========================================
      */
     async init() {
-        console.log('🚀 Initialisation MonBudget v5 FINAL (Lot 5)...');
+        console.log('🚀 Initialisation MonBudget v5 FINAL...');
 
         try {
             // 1. Storage
@@ -50,11 +50,11 @@ const App = {
             // 10. Visibilité modules
             this.applyModulesVisibility();
 
-            // 11. Écran de démarrage
+            // 11. Écran de démarrage (avec attente Firebase)
             await this.decideStartScreen(firebaseOk);
 
             this.initialized = true;
-            console.log('✅ MonBudget v5 FINAL (Lot 5) initialisé');
+            console.log('✅ MonBudget v5 initialisé');
 
         } catch (error) {
             console.error('❌ Erreur init:', error);
@@ -62,27 +62,52 @@ const App = {
         }
     },
 
-        async decideStartScreen(firebaseAvailable) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+    /**
+     * ==========================================
+     * ÉCRAN DE DÉMARRAGE (avec attente session Firebase)
+     * ==========================================
+     */
+    async decideStartScreen(firebaseAvailable) {
+        // ✅ Attendre que Firebase Auth restaure la session
+        if (firebaseAvailable && FirebaseService.auth) {
+            await new Promise((resolve) => {
+                const unsubscribe = FirebaseService.auth.onAuthStateChanged((user) => {
+                    unsubscribe();
+                    resolve(user);
+                });
 
+                // Timeout de sécurité : 3 secondes max
+                setTimeout(() => resolve(null), 3000);
+            });
+        }
+
+        // Cas 1 : Utilisateur restauré depuis la session Firebase
         if (firebaseAvailable && FirebaseService.auth && FirebaseService.auth.currentUser) {
+            const user = FirebaseService.auth.currentUser;
             State.user = {
-                uid: FirebaseService.auth.currentUser.uid,
-                email: FirebaseService.auth.currentUser.email
+                uid: user.uid,
+                email: user.email
             };
             State.isGuestMode = false;
+
+            localStorage.setItem('mb_last_auth_state', 'signed_in');
+            console.log('✅ Session Firebase restaurée:', user.email);
+
             this.hideSplash();
             if (Storage.hasPin()) PinLock.checkOnStart();
             return;
         }
 
-        if (State.isGuestMode || !firebaseAvailable) {
+        // Cas 2 : Mode local (précédemment choisi)
+        const wasGuestMode = localStorage.getItem('mb_last_auth_state') === 'guest';
+        if (State.isGuestMode || wasGuestMode || !firebaseAvailable) {
             State.isGuestMode = true;
             this.hideSplash();
             if (Storage.hasPin()) PinLock.checkOnStart();
             return;
         }
 
+        // Cas 3 : Première visite ou déconnecté → écran d'auth
         this.hideSplash();
         setTimeout(() => Auth.showAuthScreen(), 300);
     },
