@@ -1,5 +1,5 @@
 /* ============================================
-   APP.JS - Point d'entrée principal v5 FINAL
+   APP.JS - Point d'entrée principal v5 FINAL (Lot 4)
    ============================================ */
 
 'use strict';
@@ -15,7 +15,7 @@ const App = {
      * ==========================================
      */
     async init() {
-        console.log('🚀 Initialisation MonBudget v5 FINAL...');
+        console.log('🚀 Initialisation MonBudget v5 FINAL (Lot 4)...');
 
         try {
             // 1. Charger les données locales + migration
@@ -49,7 +49,7 @@ const App = {
             await this.decideStartScreen(firebaseOk);
 
             this.initialized = true;
-            console.log('✅ MonBudget v5 FINAL initialisé');
+            console.log('✅ MonBudget v5 FINAL (Lot 4) initialisé');
 
         } catch (error) {
             console.error('❌ Erreur init:', error);
@@ -57,13 +57,9 @@ const App = {
         }
     },
 
-    /**
-     * Décide quel écran afficher au démarrage
-     */
     async decideStartScreen(firebaseAvailable) {
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Si Firebase connecté
         if (firebaseAvailable && FirebaseService.auth && FirebaseService.auth.currentUser) {
             State.user = {
                 uid: FirebaseService.auth.currentUser.uid,
@@ -71,12 +67,10 @@ const App = {
             };
             State.isGuestMode = false;
             this.hideSplash();
-
             if (Storage.hasPin()) PinLock.checkOnStart();
             return;
         }
 
-        // Si Firebase indispo ou mode local
         if (State.isGuestMode || !firebaseAvailable) {
             State.isGuestMode = true;
             this.hideSplash();
@@ -84,7 +78,6 @@ const App = {
             return;
         }
 
-        // Sinon écran connexion
         this.hideSplash();
         setTimeout(() => Auth.showAuthScreen(), 300);
     },
@@ -170,59 +163,43 @@ const App = {
      * ==========================================
      */
     setupGlobalEvents() {
-        // Page changée
         document.addEventListener('page:changed', (e) => {
             this.onPageChanged(e.detail.page, e.detail.previous);
         });
 
-        // Auth
         document.addEventListener('auth:signedin', () => this.onSignedIn());
         document.addEventListener('auth:signedout', () => this.onSignedOut());
         document.addEventListener('auth:guest', () => this.onGuestMode());
 
-        // Import
         document.addEventListener('data:imported', () => this.refreshUI());
-
-        // Cloud
         document.addEventListener('cloud:updated', () => this.refreshCurrentPage());
-
-        // Sauvegarde
         document.addEventListener('state:saved', () => this.updateSyncStatus());
 
-        // Menu Plus
         this.setupMoreMenuEvents();
 
-        // Boutons compte
         const btnSignOut = document.getElementById('btnSignOut');
         if (btnSignOut) btnSignOut.addEventListener('click', () => Auth.handleSignOut());
 
         const btnSyncManual = document.getElementById('btnSyncManual');
         if (btnSyncManual) btnSyncManual.addEventListener('click', () => CloudSync.manualSync());
 
-        // Bouton lock
         const btnLock = document.getElementById('btnLock');
         if (btnLock) btnLock.addEventListener('click', () => PinLock.showLockScreen());
 
-        // App resume
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) this.onAppResume();
         });
 
-        // PWA install
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             this.deferredInstallPrompt = e;
         });
 
-        // Track activity
         ['click', 'touchstart', 'keydown'].forEach(evt => {
             document.addEventListener(evt, () => this._lastActivity = Date.now(), { passive: true });
         });
     },
 
-    /**
-     * Menu Plus
-     */
     setupMoreMenuEvents() {
         document.querySelectorAll('.menu-item[data-more]').forEach(item => {
             item.addEventListener('click', () => {
@@ -274,7 +251,11 @@ const App = {
                 this.openHorairesPage();
                 break;
             case 'calendrier':
-                Toast.info('📅 Calendrier dans le Lot 4');
+                // Navigation vers l'onglet Analyse avec la vue Calendrier
+                Router.navigateTo('analyse');
+                setTimeout(() => {
+                    if (typeof Analyse !== 'undefined') Analyse.switchView('calendrier');
+                }, 300);
                 break;
             default:
                 console.log('Action inconnue:', action);
@@ -787,14 +768,17 @@ const App = {
 
             case 'add':
                 this.applyModulesVisibility();
+                this.attachAddMenuEvents();
                 break;
 
             case 'budget':
                 this.renderBudgetPage();
+                this.attachBudgetSegments();
                 break;
 
             case 'analyse':
                 this.renderAnalysePage();
+                this.attachAnalyseSegments();
                 break;
 
             case 'more':
@@ -805,10 +789,43 @@ const App = {
     },
 
     /**
-     * PAGE BUDGET
+     * Attache les événements du menu Ajouter
      */
+    attachAddMenuEvents() {
+        document.querySelectorAll('.add-menu-item[data-add]').forEach(item => {
+            // Retirer les anciens listeners en clonant
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+
+            newItem.addEventListener('click', () => {
+                this.handleAddAction(newItem.dataset.add);
+            });
+        });
+    },
+
+    /**
+     * ==========================================
+     * PAGE BUDGET
+     * ==========================================
+     */
+    _currentBudgetSegment: 'depenses',
+
+    attachBudgetSegments() {
+        document.querySelectorAll('#budgetSegments .segment').forEach(seg => {
+            const newSeg = seg.cloneNode(true);
+            seg.parentNode.replaceChild(newSeg, seg);
+
+            newSeg.addEventListener('click', () => {
+                document.querySelectorAll('#budgetSegments .segment').forEach(s => s.classList.remove('active'));
+                newSeg.classList.add('active');
+                this._currentBudgetSegment = newSeg.dataset.segment;
+                this.renderBudgetPage();
+            });
+        });
+    },
+
     renderBudgetPage() {
-        const segment = document.querySelector('#budgetSegments .segment.active')?.dataset.segment || 'depenses';
+        const segment = this._currentBudgetSegment || 'depenses';
         const content = document.getElementById('budgetContent');
 
         if (!content) return;
@@ -821,9 +838,7 @@ const App = {
                     </button>
                     ${Depenses.renderPage()}
                 `;
-                setTimeout(() => {
-                    Depenses.init(content);
-                }, 50);
+                setTimeout(() => Depenses.init(content), 50);
                 break;
 
             case 'shopping':
@@ -833,9 +848,7 @@ const App = {
                     </button>
                     ${Shopping.renderPage()}
                 `;
-                setTimeout(() => {
-                    Shopping.refresh();
-                }, 50);
+                setTimeout(() => Shopping.refresh(), 50);
                 break;
 
             case 'recurrent':
@@ -845,9 +858,7 @@ const App = {
                     </button>
                     ${Recurrent.renderPage()}
                 `;
-                setTimeout(() => {
-                    Recurrent.refresh();
-                }, 50);
+                setTimeout(() => Recurrent.refresh(), 50);
                 break;
 
             case 'budgets':
@@ -857,31 +868,53 @@ const App = {
                     </button>
                     ${Budgets.renderPage()}
                 `;
-                setTimeout(() => {
-                    Budgets.refresh();
-                }, 50);
+                setTimeout(() => Budgets.refresh(), 50);
                 break;
         }
     },
 
     /**
+     * ==========================================
      * PAGE ANALYSE
+     * ==========================================
      */
-    renderAnalysePage() {
-        const content = document.getElementById('analyseContent');
-        if (!content) return;
+    _currentAnalyseView: 'resume',
 
-        content.innerHTML = `
-            <div class="empty-page">
-                <div class="empty-icon">📊</div>
-                <h2>Analyse</h2>
-                <p>Graphiques avancés dans le Lot 4</p>
-            </div>
-        `;
+    attachAnalyseSegments() {
+        document.querySelectorAll('#analyseSegments .segment').forEach(seg => {
+            const newSeg = seg.cloneNode(true);
+            seg.parentNode.replaceChild(newSeg, seg);
+
+            newSeg.addEventListener('click', () => {
+                document.querySelectorAll('#analyseSegments .segment').forEach(s => s.classList.remove('active'));
+                newSeg.classList.add('active');
+                this._currentAnalyseView = newSeg.dataset.analyseView;
+                this.renderAnalysePage();
+            });
+        });
+    },
+
+    renderAnalysePage() {
+        if (typeof Analyse !== 'undefined') {
+            Analyse.render(this._currentAnalyseView);
+        } else {
+            const content = document.getElementById('analyseContent');
+            if (content) {
+                content.innerHTML = `
+                    <div class="empty-page">
+                        <div class="empty-icon">📊</div>
+                        <h2>Analyse</h2>
+                        <p>Module non chargé</p>
+                    </div>
+                `;
+            }
+        }
     },
 
     /**
+     * ==========================================
      * HISTORIQUE HORAIRES
+     * ==========================================
      */
     openHorairesPage() {
         const html = `
@@ -1063,6 +1096,12 @@ window.Objectifs = Objectifs;
 window.Shopping = Shopping;
 window.Recurrent = Recurrent;
 window.Budgets = Budgets;
+
+// Lot 4
+if (typeof Graphiques !== 'undefined') window.Graphiques = Graphiques;
+if (typeof Analyse !== 'undefined') window.Analyse = Analyse;
+if (typeof Calendrier !== 'undefined') window.Calendrier = Calendrier;
+if (typeof Suggestions !== 'undefined') window.Suggestions = Suggestions;
 
 /**
  * Démarrage
