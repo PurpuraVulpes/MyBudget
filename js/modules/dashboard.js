@@ -84,6 +84,11 @@ const Dashboard = {
         }
     },
 
+    /**
+     * ==========================================
+     * RENDU PRINCIPAL DU DASHBOARD
+     * ==========================================
+     */
     render() {
         const container = document.getElementById('homeContent');
         if (!container) return;
@@ -118,6 +123,11 @@ const Dashboard = {
         });
     },
 
+    /**
+     * ==========================================
+     * HEADER
+     * ==========================================
+     */
     renderHeader() {
         const now = new Date();
         const hour = now.getHours();
@@ -169,6 +179,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : SOLDE (Ce qu'il reste)
+     * ==========================================
+     */
     renderSoldeWidget() {
         const currentM = StateHelpers.currentMonth();
         const revenue = StateHelpers.computeMonthlyRevenue(currentM);
@@ -216,6 +231,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : REVENUS
+     * ==========================================
+     */
     renderRevenusWidget() {
         const currentM = StateHelpers.currentMonth();
         const revenue = StateHelpers.computeMonthlyRevenue(currentM);
@@ -257,6 +277,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : DÉPENSES
+     * ==========================================
+     */
     renderDepensesWidget() {
         const currentM = StateHelpers.currentMonth();
         const expenses = StateHelpers.computeMonthlyExpenses(currentM);
@@ -276,6 +301,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : ÉPARGNE
+     * ==========================================
+     */
     renderEpargneWidget() {
         const solde = StateHelpers.getEpargneSolde();
         const currentM = StateHelpers.currentMonth();
@@ -293,6 +323,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : HEURES
+     * ==========================================
+     */
     renderHeuresWidget() {
         const currentM = StateHelpers.currentMonth();
         const horaires = StateHelpers.getHorairesForMonth(currentM);
@@ -311,6 +346,11 @@ const Dashboard = {
         `;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : OBJECTIFS
+     * ==========================================
+     */
     renderObjectifsWidget() {
         const objectifs = State.data.objectifs || [];
 
@@ -364,6 +404,11 @@ const Dashboard = {
         return html;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : DÉPENSES RÉCURRENTES
+     * ==========================================
+     */
     renderRecurrentWidget() {
         const recurrent = State.data.recurrent || [];
         const actifs = recurrent.filter(r => r.actif !== false);
@@ -440,6 +485,11 @@ const Dashboard = {
         return html;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : ALERTES BUDGETS
+     * ==========================================
+     */
     renderBudgetsWidget() {
         const budgets = State.data.budgets || [];
         if (budgets.length === 0) return '';
@@ -499,6 +549,11 @@ const Dashboard = {
         return html;
     },
 
+    /**
+     * ==========================================
+     * WIDGET : SUGGESTIONS
+     * ==========================================
+     */
     renderSuggestionsWidget() {
         const suggestions = this.generateSuggestions();
         if (suggestions.length === 0) return '';
@@ -529,6 +584,9 @@ const Dashboard = {
         return html;
     },
 
+    /**
+     * Génère des suggestions intelligentes
+     */
     generateSuggestions() {
         const suggestions = [];
         const currentM = StateHelpers.currentMonth();
@@ -581,6 +639,11 @@ const Dashboard = {
         return suggestions;
     },
 
+    /**
+     * ==========================================
+     * ÉVÉNEMENTS
+     * ==========================================
+     */
     attachEvents() {
         document.querySelectorAll('[data-widget-nav]').forEach(w => {
             w.addEventListener('click', () => {
@@ -598,6 +661,11 @@ const Dashboard = {
         });
     },
 
+    /**
+     * ==========================================
+     * SHEET DE CONFIGURATION DES WIDGETS
+     * ==========================================
+     */
     openWidgetsSheet() {
         let html = `
             <p style="color: var(--text2); font-size: var(--text-sm); text-align: center; margin-bottom: var(--space-md);">
@@ -619,7 +687,11 @@ const Dashboard = {
             `;
         });
 
-        html += '</div>';
+        html += `</div>
+            <button class="btn btn-primary btn-block" style="margin-top: var(--space-md);" onclick="Router.closeSheet(); setTimeout(() => { Router.navigateTo('home'); Dashboard.render(); }, 300);">
+                ✅ Voir mon dashboard
+            </button>
+        `;
 
         Router.openSheet('widgets', 'Widgets du dashboard', html);
 
@@ -640,15 +712,18 @@ const Dashboard = {
                         sw.classList.toggle('active', State.settings.widgets[key]);
                     }
 
-                    notifyStateChange();
+                    // Sauvegarder immédiatement
+                    if (typeof Storage !== 'undefined') Storage.save();
+                    if (typeof notifyStateChange === 'function') notifyStateChange();
 
                     if (State.user && !State.isGuestMode && typeof CloudSync !== 'undefined') {
                         CloudSync.saveSettings();
                     }
 
-                    if (State.currentPage === 'home') {
-                        self.render();
-                    }
+                    // Re-render le dashboard (même s'il n'est pas visible)
+                    self.render();
+
+                    console.log('Widget toggled:', key, '=', State.settings.widgets[key]);
                 });
             });
         }, 150);
