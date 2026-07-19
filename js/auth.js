@@ -160,11 +160,18 @@ const Auth = {
     /**
      * Mode invité (sans compte)
      */
+        /**
+     * Mode invité (sans compte)
+     */
     guestMode() {
         State.isGuestMode = true;
         State.user = null;
         this.isAuthenticated = false;
         this.currentUser = null;
+
+        // ✅ Mémoriser le choix
+        localStorage.setItem('mb_last_auth_state', 'guest');
+
         console.log('👤 Mode invité activé');
         document.dispatchEvent(new CustomEvent('auth:guest'));
     },
