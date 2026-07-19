@@ -751,15 +751,14 @@ const Dashboard = {
         `;
 
         Object.values(this.availableWidgets).forEach(widget => {
-            const isActive = State.settings.widgets[widget.id] === true;
+            const isActive = State.settings.widgets && State.settings.widgets[widget.id] === true;
             html += `
-                <div class="switch-row">
+                <div class="switch-row" data-widget-row="${widget.id}" style="cursor: pointer;">
                     <div class="switch-row-body">
                         <div class="switch-row-title">${widget.icon} ${widget.label}</div>
                         <div class="switch-row-desc">${widget.desc}</div>
                     </div>
-                    <div class="switch widget-toggle ${isActive ? 'active' : ''}"
-                         data-widget-key="${widget.id}"></div>
+                    <div class="switch widget-toggle ${isActive ? 'active' : ''}" data-widget-key="${widget.id}"></div>
                 </div>
             `;
         });
@@ -768,30 +767,38 @@ const Dashboard = {
 
         Router.openSheet('widgets', 'Widgets du dashboard', html);
 
-        // Attacher les événements
+        const self = this;
         setTimeout(() => {
-            document.querySelectorAll('.widget-toggle').forEach(sw => {
-                sw.addEventListener('click', () => {
-                    const key = sw.dataset.widgetKey;
+            // ✅ Attacher les événements sur toute la row
+            document.querySelectorAll('[data-widget-row]').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const key = row.dataset.widgetRow;
+                    const sw = row.querySelector('.widget-toggle');
+
                     if (!State.settings.widgets) State.settings.widgets = {};
                     State.settings.widgets[key] = !State.settings.widgets[key];
-                    sw.classList.toggle('active', State.settings.widgets[key]);
+
+                    if (sw) {
+                        sw.classList.toggle('active', State.settings.widgets[key]);
+                    }
 
                     notifyStateChange();
 
-                    if (State.user && !State.isGuestMode) {
+                    if (State.user && !State.isGuestMode && typeof CloudSync !== 'undefined') {
                         CloudSync.saveSettings();
                     }
 
                     // Rafraîchir le dashboard si on est dessus
                     if (State.currentPage === 'home') {
-                        this.render();
+                        self.render();
                     }
                 });
             });
-        }, 100);
+        }, 150);
     }
-};
 
 // Alias global
 window.Dashboard = Dashboard;
