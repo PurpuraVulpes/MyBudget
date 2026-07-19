@@ -426,13 +426,14 @@ const App = {
         let html = '<div class="form" style="gap: 0;">';
 
         modules.forEach(m => {
+            const isActive = State.modules[m.key] === true;
             html += `
-                <div class="switch-row">
+                <div class="switch-row" data-module-row="${m.key}" style="cursor: pointer;">
                     <div class="switch-row-body">
                         <div class="switch-row-title">${m.icon} ${m.label}</div>
                         <div class="switch-row-desc">${m.desc}</div>
                     </div>
-                    <div class="switch module-switch ${State.modules[m.key] ? 'active' : ''}" data-module="${m.key}"></div>
+                    <div class="switch module-switch ${isActive ? 'active' : ''}" data-module="${m.key}"></div>
                 </div>
             `;
         });
@@ -442,17 +443,34 @@ const App = {
         Router.openSheet('modules', 'Modules actifs', html);
 
         setTimeout(() => {
-            document.querySelectorAll('.module-switch').forEach(sw => {
-                sw.addEventListener('click', () => {
-                    const moduleName = sw.dataset.module;
+            // ✅ Attacher les événements sur toute la row (plus large zone de clic)
+            document.querySelectorAll('[data-module-row]').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const moduleName = row.dataset.moduleRow;
+                    const sw = row.querySelector('.module-switch');
+
+                    // Toggle
                     State.modules[moduleName] = !State.modules[moduleName];
-                    sw.classList.toggle('active', State.modules[moduleName]);
+
+                    // Mettre à jour visuellement
+                    if (sw) {
+                        sw.classList.toggle('active', State.modules[moduleName]);
+                    }
+
+                    // Sauvegarder
                     notifyStateChange();
-                    if (State.user && !State.isGuestMode) CloudSync.saveSettings();
+                    if (State.user && !State.isGuestMode && typeof CloudSync !== 'undefined') {
+                        CloudSync.saveSettings();
+                    }
+
+                    // Rafraîchir les menus
                     this.applyModulesVisibility();
                 });
             });
-        }, 100);
+        }, 150);
     },
 
     openSettingsSheet() {
