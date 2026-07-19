@@ -770,8 +770,10 @@
 .pin-dots {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 14px;
-    margin: var(--space-lg) 0;
+    margin: var(--space-lg) auto;
+    width: 100%;
 }
 
 .pin-dot {
@@ -805,8 +807,15 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-sm);
-    max-width: 260px;
+    max-width: 280px;
+    width: 100%;
     margin: 0 auto;
+    justify-items: center;
+}
+
+.keypad .key {
+    width: 100%;
+    max-width: 80px;
 }
 
 .key {
