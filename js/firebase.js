@@ -104,22 +104,33 @@ const CloudSync = {
         this.stopSync();
 
         // Écouter les settings
+        this._settingsFromCloud = false;
+
         this.unsubscribers.settings = FirebaseService.userRef(uid)
             .collection('data').doc('settings')
             .onSnapshot(doc => {
                 if (doc.exists) {
-                    const data = doc.data();
+                    var data = doc.data();
+
+                    // ✅ Ignorer si c'est notre propre sauvegarde qui revient
+                    if (this._settingsFromCloud) return;
+
                     console.log('☁️ Settings reçus du cloud');
+
                     if (data.settings) {
                         State.settings = { ...State.settings, ...data.settings };
                     }
                     if (data.modules) {
                         State.modules = { ...State.modules, ...data.modules };
                     }
+
+                    // ✅ Sauvegarder localement SANS re-déclencher le cloud
                     Storage.saveSilent();
+
+                    // ✅ Appliquer le thème sans sauvegarder dans le cloud
                     if (typeof App !== 'undefined') {
-                        App.applyTheme(State.settings.theme || 'purple');
-                        App.refreshCurrentPage();
+                        var theme = State.settings.theme || 'purple';
+                        document.documentElement.setAttribute('data-theme', theme);
                     }
                 }
             }, err => {
@@ -325,16 +336,28 @@ const CloudSync = {
         if (!FirebaseService.isAvailable() || !State.user) return false;
 
         try {
+            // ✅ Marquer qu'on est en train de sauvegarder
+            // pour éviter que le listener ne re-déclenche
+            this._settingsFromCloud = true;
+
             await FirebaseService.userRef(State.user.uid)
                 .collection('data').doc('settings').set({
                     settings: State.settings,
                     modules: State.modules,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
+
             console.log('⏫ Settings sauvegardés');
+
+            // ✅ Remettre le flag après un délai
+            setTimeout(() => {
+                this._settingsFromCloud = false;
+            }, 2000);
+
             return true;
         } catch (error) {
             console.error('❌ Sauvegarde settings:', error);
+            this._settingsFromCloud = false;
             return false;
         }
     },
