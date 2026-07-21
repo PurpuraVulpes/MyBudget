@@ -116,6 +116,11 @@
 .page {
     width: 100%;
     min-height: calc(100dvh - var(--header-height) - var(--nav-height) - var(--safe-top) - var(--safe-bot));
+}
+
+/* Animation uniquement quand on change de page (pas au re-render) */
+.page.page-transition-forward,
+.page.page-transition-backward {
     animation: pageEnter var(--transition-slow);
 }
 
