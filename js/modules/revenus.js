@@ -7,13 +7,7 @@
 const Revenus = {
 
     /**
-     * ==========================================
-     * FORMULAIRE - CHOIX DU TYPE
-     * ==========================================
-     */
-
-    /**
-     * Ouvre un menu pour choisir : salaire ou extra
+     * Ouvre le menu de choix (salaire / extra)
      */
     openAddForm() {
         const html = `
@@ -46,13 +40,11 @@ const Revenus = {
 
         setTimeout(() => {
             document.getElementById('btnAddSalaire')?.addEventListener('click', () => {
-                Router.closeSheet();
-                setTimeout(() => this.openSalaireForm(), 200);
+                this.openSalaireForm();
             });
 
             document.getElementById('btnAddExtra')?.addEventListener('click', () => {
-                Router.closeSheet();
-                setTimeout(() => this.openExtraForm(), 200);
+                this.openExtraForm();
             });
         }, 100);
     },
@@ -62,20 +54,15 @@ const Revenus = {
      * FORMULAIRE SALAIRE (avec prévision)
      * ==========================================
      */
-
     openSalaireForm() {
         const currentM = StateHelpers.currentMonth();
         const prevM = StateHelpers.getPreviousMonth(currentM);
         const nextM = StateHelpers.getNextMonth(currentM);
 
-        // Prévisions
         const horairesActuel = StateHelpers.getHorairesForMonth(currentM);
         const horairesPrec = StateHelpers.getHorairesForMonth(prevM);
         const gainActuel = horairesActuel.reduce((s, x) => s + x.gain, 0);
         const gainPrec = horairesPrec.reduce((s, x) => s + x.gain, 0);
-
-        // Est-ce que la paie du mois précédent est déjà enregistrée ?
-        const paieDejaLa = StateHelpers.getPaiementsForMonth(currentM).length > 0;
 
         let html = `
             <div class="banner banner-info" style="margin-bottom: var(--space-md);">
@@ -89,7 +76,6 @@ const Revenus = {
             </div>
         `;
 
-        // Card de prévision (si des heures ont été travaillées)
         if (gainPrec > 0 || gainActuel > 0) {
             html += `
                 <div class="prevision-card">
@@ -116,7 +102,6 @@ const Revenus = {
                     </div>
             `;
 
-            // Zone d'ajustement (uniquement si gainPrec > 0)
             if (gainPrec > 0) {
                 html += `
                     <div class="paie-adjust">
@@ -158,15 +143,11 @@ const Revenus = {
             html += '</div>';
         }
 
-        // Séparateur
         html += `
             <div class="divider-text">
                 <span>OU SAISIE MANUELLE</span>
             </div>
-        `;
 
-        // Formulaire manuel
-        html += `
             <div class="form">
                 <div class="form-group">
                     <label class="form-label">📅 Mois de réception</label>
@@ -193,16 +174,11 @@ const Revenus = {
         Router.openSheet('add-salaire', '💼 Nouveau salaire', html);
 
         setTimeout(() => {
-            // Événements paie prévue
             this.attachSalaireEvents(gainPrec, currentM, prevM);
         }, 100);
     },
 
-    /**
-     * Attache les événements du formulaire salaire
-     */
     attachSalaireEvents(gainOriginal, currentM, prevM) {
-        // Stepper +/-
         const input = document.getElementById('paieMontantAjuste');
 
         if (input) {
@@ -220,10 +196,8 @@ const Revenus = {
                 this.updateAdjustHint(gainOriginal);
             });
 
-            // Input manuel
             input.addEventListener('input', () => this.updateAdjustHint(gainOriginal));
 
-            // Chips rapides
             document.querySelectorAll('.chip[data-paie-adj]').forEach(chip => {
                 chip.addEventListener('click', () => {
                     const adj = chip.dataset.paieAdj;
@@ -238,7 +212,6 @@ const Revenus = {
             });
         }
 
-        // Bouton enregistrer paie prévue
         const btnPrevue = document.getElementById('btnEnregistrerPaie');
         if (btnPrevue) {
             btnPrevue.addEventListener('click', () => {
@@ -251,16 +224,12 @@ const Revenus = {
             });
         }
 
-        // Bouton enregistrer manuel
         const btnManuel = document.getElementById('btnEnregistrerManuel');
         if (btnManuel) {
             btnManuel.addEventListener('click', () => this.saveManualPaie());
         }
     },
 
-    /**
-     * Met à jour l'indication de différence
-     */
     updateAdjustHint(original) {
         const input = document.getElementById('paieMontantAjuste');
         const hint = document.getElementById('paieAdjustHint');
@@ -283,9 +252,6 @@ const Revenus = {
         }
     },
 
-    /**
-     * Sauvegarde une paie
-     */
     savePaie(mois, montant, description = '') {
         const paiement = {
             id: StateHelpers.generateId(),
@@ -304,9 +270,6 @@ const Revenus = {
         if (State.currentPage === 'home') Dashboard.render();
     },
 
-    /**
-     * Sauvegarde une paie manuelle
-     */
     saveManualPaie() {
         const mois = FormHelpers.getText('paieMoisManuel');
         const montant = FormHelpers.getNumber('paieMontantManuel');
@@ -325,7 +288,6 @@ const Revenus = {
      * FORMULAIRE EXTRA (revenu supplémentaire)
      * ==========================================
      */
-
     openExtraForm() {
         const html = `
             <div class="form">
@@ -367,9 +329,6 @@ const Revenus = {
         }, 100);
     },
 
-    /**
-     * Sauvegarde un extra
-     */
     saveExtra() {
         const date = FormHelpers.getText('addExtraDate');
         const montant = FormHelpers.getNumber('addExtraMontant');
@@ -408,10 +367,6 @@ const Revenus = {
      * REPORT DE SOLDE
      * ==========================================
      */
-
-    /**
-     * Reporte le solde d'un mois au suivant
-     */
     reportSolde(fromMonth) {
         const solde = StateHelpers.computeMonthlyBalance(fromMonth);
 
@@ -422,7 +377,6 @@ const Revenus = {
 
         const nextMonth = StateHelpers.getNextMonth(fromMonth);
 
-        // Vérifier si un report existe déjà
         const existing = State.data.extras.find(e =>
             e.date.startsWith(nextMonth) &&
             e.source === '📅 Report' &&
@@ -430,12 +384,10 @@ const Revenus = {
         );
 
         const doReport = () => {
-            // Supprimer l'ancien report s'il existe
             if (existing) {
                 App.removeData('extras', existing.id);
             }
 
-            // Créer le nouveau report
             const extra = {
                 id: StateHelpers.generateId(),
                 date: nextMonth + '-01',
@@ -466,5 +418,4 @@ const Revenus = {
     }
 };
 
-// Alias global
 window.Revenus = Revenus;
