@@ -5,9 +5,7 @@
 'use strict';
 
 /**
- * ⚠️ IMPORTANT
- * Remplacez ces valeurs par VOS clés Firebase
- * Firebase Console → Paramètres du projet → Vos applications
+ * ⚠️ REMPLACE PAR TES CLÉS FIREBASE
  */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDK7eRyDOCgITy_rMiTu-kOvWlPWuwze7E",
@@ -19,9 +17,6 @@ const FIREBASE_CONFIG = {
   appId: "1:871085643686:web:9a4dd73501ddb6657b2167"
 };
 
-/**
- * Service Firebase
- */
 const FirebaseService = {
 
     initialized: false,
@@ -29,36 +24,30 @@ const FirebaseService = {
     auth: null,
     db: null,
 
-    /**
-     * Initialise Firebase
-     */
-       init() {
+    init() {
         try {
-            // Vérifier que Firebase est chargé
             if (typeof firebase === 'undefined') {
-                console.warn('⚠️ Firebase non chargé - mode local uniquement');
+                console.warn('⚠️ Firebase non chargé');
                 this.available = false;
                 return false;
             }
 
-            // Vérifier la config
-            if (FIREBASE_CONFIG.apiKey === 'VOTRE_API_KEY_ICI') {
-                console.warn('⚠️ Firebase non configuré - mode local uniquement');
+            if (FIREBASE_CONFIG.apiKey === 'TA_CLÉ_API_ICI') {
+                console.warn('⚠️ Firebase non configuré');
                 this.available = false;
                 return false;
             }
 
-            // Initialiser
             firebase.initializeApp(FIREBASE_CONFIG);
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            // ✅ IMPORTANT : Persistance de la session (rester connecté)
+            // Persistance session (rester connecté)
             this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                 .then(() => console.log('✅ Session persistante activée'))
                 .catch(err => console.warn('⚠️ Persistance session:', err));
 
-            // Activer la persistance offline pour Firestore
+            // Persistance offline
             this.db.enablePersistence({ synchronizeTabs: true })
                 .catch(err => console.warn('Firestore persistence:', err.code));
 
@@ -75,24 +64,15 @@ const FirebaseService = {
         }
     },
 
-    /**
-     * Vérifie si Firebase est disponible
-     */
     isAvailable() {
         return this.available && this.initialized;
     },
 
-    /**
-     * Renvoie une référence à la collection de l'utilisateur
-     */
     userRef(uid) {
         if (!this.isAvailable()) return null;
         return this.db.collection('users').doc(uid);
     },
 
-    /**
-     * Renvoie une référence à une sous-collection de l'utilisateur
-     */
     userCollection(uid, collectionName) {
         const userRef = this.userRef(uid);
         if (!userRef) return null;
@@ -105,20 +85,23 @@ const FirebaseService = {
  */
 const CloudSync = {
 
-    // Listeners actifs
     unsubscribers: {},
-
-    // État de la sync
     isSyncing: false,
     lastSync: null,
 
+    // Liste des collections à synchroniser
+    COLLECTIONS: ['horaires', 'depenses', 'paiements', 'extras', 'epargne', 'objectifs', 'shopping', 'recurrent', 'budgets'],
+
     /**
-     * Démarre la synchronisation temps réel pour un utilisateur
+     * Démarre la synchronisation temps réel
      */
     startRealtimeSync(uid) {
         if (!FirebaseService.isAvailable()) return;
 
-        console.log('🔄 Démarrage sync temps réel');
+        console.log('🔄 Démarrage sync temps réel pour', uid);
+
+        // Arrêter toute sync existante
+        this.stopSync();
 
         // Écouter les settings
         this.unsubscribers.settings = FirebaseService.userRef(uid)
@@ -126,6 +109,7 @@ const CloudSync = {
             .onSnapshot(doc => {
                 if (doc.exists) {
                     const data = doc.data();
+                    console.log('☁️ Settings reçus du cloud');
                     if (data.settings) {
                         State.settings = { ...State.settings, ...data.settings };
                     }
@@ -135,20 +119,26 @@ const CloudSync = {
                     Storage.saveSilent();
                     if (typeof App !== 'undefined') {
                         App.applyTheme(State.settings.theme || 'purple');
+                        App.refreshCurrentPage();
                     }
                 }
-            }, err => console.error('Sync settings:', err));
+            }, err => {
+                console.error('❌ Sync settings:', err);
+                if (err.code === 'permission-denied') {
+                    Toast.error('❌ Permissions Firestore refusées');
+                }
+            });
 
-        // Écouter chaque collection de données
-        this.watchCollection(uid, 'horaires', 'date');
-        this.watchCollection(uid, 'depenses', 'date');
-        this.watchCollection(uid, 'paiements', 'mois');
-        this.watchCollection(uid, 'extras', 'date');
-        this.watchCollection(uid, 'epargne', 'date');
-        this.watchCollection(uid, 'objectifs', null);
-        this.watchCollection(uid, 'shopping', null);
-        this.watchCollection(uid, 'recurrent', null);
-        this.watchCollection(uid, 'budgets', null);
+        // Écouter chaque collection
+        this.COLLECTIONS.forEach(name => {
+            let sortField = null;
+            if (['horaires', 'depenses', 'extras', 'epargne'].includes(name)) {
+                sortField = 'date';
+            } else if (name === 'paiements') {
+                sortField = 'mois';
+            }
+            this.watchCollection(uid, name, sortField);
+        });
     },
 
     /**
@@ -166,7 +156,6 @@ const CloudSync = {
                 items.push(data);
             });
 
-            // Trier si nécessaire
             if (sortField && items.length > 0) {
                 items.sort((a, b) => {
                     const va = String(a[sortField] || '');
@@ -175,14 +164,26 @@ const CloudSync = {
                 });
             }
 
+            const oldCount = State.data[collectionName] ? State.data[collectionName].length : 0;
             State.data[collectionName] = items;
             Storage.saveSilent();
 
-            // Notifier l'UI qu'il faut se rafraîchir
+            console.log(`☁️ ${collectionName}: ${oldCount} → ${items.length}`);
+
             document.dispatchEvent(new CustomEvent('cloud:updated', {
                 detail: { collection: collectionName, count: items.length }
             }));
-        }, err => console.error(`Sync ${collectionName}:`, err));
+
+            // Rafraîchir la page courante
+            if (typeof App !== 'undefined' && App.refreshCurrentPage) {
+                setTimeout(() => App.refreshCurrentPage(), 100);
+            }
+        }, err => {
+            console.error(`❌ Sync ${collectionName}:`, err);
+            if (err.code === 'permission-denied') {
+                Toast.error('❌ Permissions Firestore refusées pour ' + collectionName);
+            }
+        });
     },
 
     /**
@@ -198,14 +199,23 @@ const CloudSync = {
 
     /**
      * Upload initial des données locales vers le cloud
-     * (à la première connexion)
      */
     async uploadLocalData(uid) {
         if (!FirebaseService.isAvailable()) return false;
 
         const uploadedKey = Storage.KEYS.UPLOADED + uid;
-        if (localStorage.getItem(uploadedKey)) {
-            console.log('☁️ Données déjà uploadées');
+
+        // Vérifier s'il y a des données locales à uploader
+        let hasLocalData = false;
+        this.COLLECTIONS.forEach(col => {
+            if (State.data[col] && State.data[col].length > 0) {
+                hasLocalData = true;
+            }
+        });
+
+        // Si déjà uploadé ET pas de nouvelles données locales, skip
+        if (localStorage.getItem(uploadedKey) && !hasLocalData) {
+            console.log('☁️ Sync déjà en place');
             return true;
         }
 
@@ -215,20 +225,21 @@ const CloudSync = {
         try {
             const userRef = FirebaseService.userRef(uid);
 
-            // Uploader les settings et modules
+            // Upload settings
             await userRef.collection('data').doc('settings').set({
                 settings: State.settings,
                 modules: State.modules,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            }, { merge: true });
 
-            // Uploader chaque collection
-            const collections = ['horaires', 'depenses', 'paiements', 'extras',
-                               'epargne', 'objectifs', 'shopping', 'recurrent', 'budgets'];
+            console.log('✅ Settings uploadés');
 
-            for (const collectionName of collections) {
+            // Upload chaque collection
+            for (const collectionName of this.COLLECTIONS) {
                 const items = State.data[collectionName];
                 if (!items || items.length === 0) continue;
+
+                console.log(`⏫ Upload ${collectionName}: ${items.length} items`);
 
                 // Batch de 500 max
                 const chunks = [];
@@ -243,7 +254,7 @@ const CloudSync = {
                         batch.set(ref, {
                             ...item,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        }, { merge: true });
                     });
                     await batch.commit();
                 }
@@ -277,8 +288,9 @@ const CloudSync = {
             await ref.set({
                 ...item,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            }, { merge: true });
 
+            console.log(`⏫ ${collectionName} sauvegardé:`, item.id);
             return true;
         } catch (error) {
             console.error(`❌ Sauvegarde ${collectionName}:`, error);
@@ -295,6 +307,7 @@ const CloudSync = {
         try {
             await FirebaseService.userCollection(State.user.uid, collectionName)
                 .doc(String(id)).delete();
+            console.log(`🗑️ ${collectionName} supprimé:`, id);
             return true;
         } catch (error) {
             console.error(`❌ Suppression ${collectionName}:`, error);
@@ -314,7 +327,8 @@ const CloudSync = {
                     settings: State.settings,
                     modules: State.modules,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                }, { merge: true });
+            console.log('⏫ Settings sauvegardés');
             return true;
         } catch (error) {
             console.error('❌ Sauvegarde settings:', error);
@@ -332,10 +346,7 @@ const CloudSync = {
         const userRef = FirebaseService.userRef(uid);
 
         try {
-            const collections = ['horaires', 'depenses', 'paiements', 'extras',
-                               'epargne', 'objectifs', 'shopping', 'recurrent', 'budgets'];
-
-            for (const collectionName of collections) {
+            for (const collectionName of this.COLLECTIONS) {
                 const snapshot = await userRef.collection(collectionName).get();
                 const batch = FirebaseService.db.batch();
                 snapshot.forEach(doc => batch.delete(doc.ref));
@@ -343,8 +354,6 @@ const CloudSync = {
             }
 
             await userRef.collection('data').doc('settings').delete();
-
-            // Reset la clé "uploaded"
             localStorage.removeItem(Storage.KEYS.UPLOADED + uid);
 
             return true;
@@ -355,7 +364,7 @@ const CloudSync = {
     },
 
     /**
-     * Sync manuelle
+     * Sync manuelle forcée
      */
     async manualSync() {
         if (!State.user) {
@@ -364,17 +373,23 @@ const CloudSync = {
         }
 
         this.isSyncing = true;
-        Toast.info('🔄 Synchronisation...');
+        Toast.info('🔄 Synchronisation forcée...');
 
         try {
-            // Reset l'état "uploaded" et refait un upload complet
+            // Forcer un ré-upload complet
             const uploadedKey = Storage.KEYS.UPLOADED + State.user.uid;
             localStorage.removeItem(uploadedKey);
+
+            // Uploader les données locales
             await this.uploadLocalData(State.user.uid);
+
+            // Redémarrer l'écoute
+            this.startRealtimeSync(State.user.uid);
 
             Toast.success('✅ Synchronisé !');
             return true;
         } catch (error) {
+            console.error('❌ Erreur sync manuelle:', error);
             Toast.error('❌ Erreur sync');
             return false;
         } finally {
@@ -383,6 +398,5 @@ const CloudSync = {
     }
 };
 
-// Alias globaux
 window.FirebaseService = FirebaseService;
 window.CloudSync = CloudSync;
