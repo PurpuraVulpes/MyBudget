@@ -666,7 +666,7 @@ const Dashboard = {
      * SHEET DE CONFIGURATION DES WIDGETS
      * ==========================================
      */
-    openWidgetsSheet() {
+      openWidgetsSheet() {
         let html = `
             <p style="color: var(--text2); font-size: var(--text-sm); text-align: center; margin-bottom: var(--space-md);">
                 Choisissez les widgets à afficher sur votre dashboard
@@ -677,13 +677,13 @@ const Dashboard = {
         Object.values(this.availableWidgets).forEach(widget => {
             const isActive = State.settings.widgets && State.settings.widgets[widget.id] === true;
             html += `
-                <div class="switch-row" data-widget-row="${widget.id}" style="cursor: pointer;">
+                <button type="button" class="switch-row widget-row-btn" data-widget-row="${widget.id}" style="cursor: pointer; width: 100%; background: none; border: none; border-bottom: 1px solid var(--border-light); padding: var(--space-md) 0; text-align: left; color: var(--text); -webkit-tap-highlight-color: transparent;">
                     <div class="switch-row-body">
                         <div class="switch-row-title">${widget.icon} ${widget.label}</div>
                         <div class="switch-row-desc">${widget.desc}</div>
                     </div>
-                    <div class="switch widget-toggle ${isActive ? 'active' : ''}" data-widget-key="${widget.id}"></div>
-                </div>
+                    <div class="switch widget-toggle ${isActive ? 'active' : ''}" data-widget-key="${widget.id}" style="pointer-events: none;"></div>
+                </button>
             `;
         });
 
@@ -698,32 +698,22 @@ const Dashboard = {
         const self = this;
         setTimeout(() => {
             document.querySelectorAll('[data-widget-row]').forEach(row => {
-                row.addEventListener('click', (e) => {
+                row.addEventListener('click', function(e) {
                     e.preventDefault();
-                    e.stopPropagation();
 
-                    const key = row.dataset.widgetRow;
-                    const sw = row.querySelector('.widget-toggle');
+                    const key = this.dataset.widgetRow;
+                    const sw = this.querySelector('.widget-toggle');
 
                     if (!State.settings.widgets) State.settings.widgets = {};
                     State.settings.widgets[key] = !State.settings.widgets[key];
 
-                    if (sw) {
-                        sw.classList.toggle('active', State.settings.widgets[key]);
-                    }
+                    if (sw) sw.classList.toggle('active', State.settings.widgets[key]);
 
-                    // Sauvegarder immédiatement
                     if (typeof Storage !== 'undefined') Storage.save();
                     if (typeof notifyStateChange === 'function') notifyStateChange();
+                    if (State.user && !State.isGuestMode && typeof CloudSync !== 'undefined') CloudSync.saveSettings();
 
-                    if (State.user && !State.isGuestMode && typeof CloudSync !== 'undefined') {
-                        CloudSync.saveSettings();
-                    }
-
-                    // Re-render le dashboard (même s'il n'est pas visible)
                     self.render();
-
-                    console.log('Widget toggled:', key, '=', State.settings.widgets[key]);
                 });
             });
         }, 150);

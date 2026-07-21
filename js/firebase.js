@@ -120,6 +120,7 @@ const CloudSync = {
                 if (doc.exists) {
                     var data = doc.data();
 
+                    // ✅ Ignorer si c'est notre propre sauvegarde qui revient
                     if (this._settingsFromCloud) return;
 
                     console.log('☁️ Settings reçus du cloud');
@@ -131,8 +132,10 @@ const CloudSync = {
                         State.modules = { ...State.modules, ...data.modules };
                     }
 
+                    // ✅ Sauvegarder localement SANS re-déclencher le cloud
                     Storage.saveSilent();
 
+                    // ✅ Appliquer le thème sans sauvegarder dans le cloud
                     if (typeof App !== 'undefined') {
                         var theme = State.settings.theme || 'purple';
                         document.documentElement.setAttribute('data-theme', theme);
@@ -370,6 +373,8 @@ const CloudSync = {
         if (!FirebaseService.isAvailable() || !State.user) return false;
 
         try {
+            // ✅ Marquer qu'on est en train de sauvegarder
+            // pour éviter que le listener ne re-déclenche
             this._settingsFromCloud = true;
 
             await FirebaseService.userRef(State.user.uid)
@@ -381,6 +386,7 @@ const CloudSync = {
 
             console.log('⏫ Settings sauvegardés');
 
+            // ✅ Remettre le flag après un délai
             setTimeout(() => {
                 this._settingsFromCloud = false;
             }, 2000);
@@ -389,79 +395,6 @@ const CloudSync = {
         } catch (error) {
             console.error('❌ Sauvegarde settings:', error);
             this._settingsFromCloud = false;
-            return false;
-        }
-    },
-
-    /**
-     * ✅ NOUVEAU : Nettoie les doublons dans Firestore
-     * À appeler manuellement pour corriger les données existantes
-     */
-    async cleanDuplicates() {
-        if (!FirebaseService.isAvailable() || !State.user) {
-            Toast.warning('Connectez-vous pour nettoyer');
-            return false;
-        }
-
-        const uid = State.user.uid;
-        const userRef = FirebaseService.userRef(uid);
-        let totalRemoved = 0;
-
-        Toast.info('🧹 Nettoyage en cours...');
-
-        try {
-            for (const collectionName of this.COLLECTIONS) {
-                const snapshot = await userRef.collection(collectionName).get();
-                
-                // Regrouper par "signature" (contenu identique)
-                const groups = new Map();
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    delete data.updatedAt;
-                    
-                    // Créer une signature basée sur le contenu
-                    const signature = JSON.stringify({
-                        date: data.date,
-                        montant: data.montant,
-                        categorie: data.categorie,
-                        description: data.description,
-                        nom: data.nom
-                    });
-                    
-                    if (!groups.has(signature)) {
-                        groups.set(signature, []);
-                    }
-                    groups.get(signature).push(doc);
-                });
-
-                // Supprimer les doublons (garder le premier de chaque groupe)
-                const batch = FirebaseService.db.batch();
-                let removed = 0;
-                
-                groups.forEach(docs => {
-                    if (docs.length > 1) {
-                        // Garder le premier, supprimer les autres
-                        for (let i = 1; i < docs.length; i++) {
-                            batch.delete(docs[i].ref);
-                            removed++;
-                        }
-                    }
-                });
-
-                if (removed > 0) {
-                    await batch.commit();
-                    console.log(`🧹 ${collectionName}: ${removed} doublons supprimés`);
-                    totalRemoved += removed;
-                }
-            }
-
-            Toast.success(`✅ ${totalRemoved} doublons supprimés`);
-            return true;
-
-        } catch (error) {
-            console.error('❌ Erreur nettoyage:', error);
-            Toast.error('❌ Erreur nettoyage');
             return false;
         }
     },
