@@ -140,7 +140,7 @@ const Dashboard = {
         const monthLabel = Format.monthLong(StateHelpers.currentMonth());
 
         return `
-            <div class="card animate-fade-in" style="text-align: center; padding: var(--space-md);">
+            <div class="card" style="text-align: center; padding: var(--space-md);">
                 <div style="font-size: var(--text-lg); font-weight: var(--font-bold); margin-bottom: 4px;">
                     ${greeting}
                 </div>
