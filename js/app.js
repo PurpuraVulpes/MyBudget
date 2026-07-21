@@ -730,6 +730,9 @@ const App = {
     onPageChanged(page, previous) {
         console.log(`📄 Page: ${previous || 'none'} → ${page}`);
 
+        // Si on reste sur la même page, ne rien faire
+        if (page === previous && this.initialized) return;
+
         switch (page) {
             case 'home':
                 if (typeof Dashboard !== 'undefined') {
