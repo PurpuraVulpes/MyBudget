@@ -717,6 +717,7 @@ const Dashboard = {
                 });
             });
         }, 150);
-    };
+    }
+};
 
 window.Dashboard = Dashboard;
